@@ -3,9 +3,11 @@ import time
 import logging
 import gym
 import stable_baselines3
+import tensorflow as tf
+import tensorboard
 import yaml
 from gym_env_balancin import ControlEnv
-
+from gym_env_balancin import TensorboardCallback
 from stable_baselines3 import SAC
 
 
@@ -13,7 +15,7 @@ from stable_baselines3 import SAC
 
 def setup_arduino():
     """Funcion para hacer el septup del arduino"""
-    arduino = serial.Serial('COM5', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
+    arduino = serial.Serial('COM11', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
     print("Correctamente conectado")
 
     time.sleep(3)
@@ -84,30 +86,30 @@ def read_hyperparams():
 
 
 
-def train_agent(env, time_steps):
+def train_agent(env, time_steps,input_callback):
     """Funcion para entrenar el agente"""
     #hyperparams = read_hyperparams()
 
-    sac = SAC('MlpPolicy', 
-              env=env,
-              buffer_size=2048,
-              batch_size=32,
-              train_freq=2,
-              use_sde=True, 
-              sde_sample_freq = 1000, 
-              use_sde_at_warmup=True,
-              verbose=2, 
-              seed=305, 
-              tensorboard_log="./sac_testing_v0/")
+    sac = SAC('MlpPolicy',
+        env=env,
+        batch_size= 256,
+        learning_rate= 7.3e-4,
+        buffer_size= 1000000,
+        ent_coef= 'auto',
+        gamma= 0.99,
+        tau = 0.01,
+        train_freq= 1,
+        gradient_steps= 1,
+        learning_starts= 10000,
+        use_sde=True,
+        sde_sample_freq = 1000,
+        verbose=1,
+        seed=78,
+        tensorboard_log="./sac_testing_v0/")
 
-    sac.learn(total_timesteps = time_steps)
+    sac.learn(total_timesteps = time_steps, callback = input_callback)
 
     sac.save(path="model_trained_v00")
-
-
-
-
-
 
 
 
@@ -132,9 +134,13 @@ if __name__ == "__main__":
     time.sleep(2)
 
     input("Vuelve a presionar enter para que el agente se ejecute",)
+
+    # Se definen las variables a monitorizar en Tensorboard
+    r_callback = TensorboardCallback()
+
     #Se empieza con el entrenamiento del agente
     #random_agent(env=env)
-    train_agent(env, time_steps = 200 * 50)
+    train_agent(env, time_steps = 200 * 500, input_callback = r_callback)
 
     #Se finaliza todo el setup del arduino
     env.reset()
