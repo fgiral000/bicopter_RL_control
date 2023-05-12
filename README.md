@@ -1,1 +1,3 @@
-# bicopter_RL_control
+# BICOPTER DRL CONTROL
+
+- REQUIRED LIBRARIES:
