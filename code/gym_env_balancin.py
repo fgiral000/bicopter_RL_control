@@ -10,7 +10,7 @@ class TensorboardCallback(BaseCallback):
         super(TensorboardCallback, self).__init__(verbose)
         self.primary_reward = 0
         self.secondary_reward = 0
-        self.log_path = './sac_testing_v0/'
+        self.log_path = 'C:/Users/dgtss/ComsArduino/sac_testing_v0'
 
     def _on_rollout_end(self) -> None:
         self.logger.record("rewards/primary_reward", self.primary_reward)
@@ -41,7 +41,7 @@ class TensorboardCallback(BaseCallback):
         theta_dot = state_space[1]
         self.logger.record("state_space/theta_dot", theta_dot)
 
-        theta_dot_denorm = theta*self.max_aceleration
+        theta_dot_denorm = theta_dot*self.max_aceleration
         self.logger.record("state_space/theta_dot_denorm", theta_dot_denorm)
 
 
@@ -94,7 +94,7 @@ class ControlEnv(gym.Env):
 
         ###Valores maximos de los parametros del vector de estado
         self.max_theta = 30
-        self.max_aceleration = 500
+        self.max_aceleration = 20000
 
 
         #Valores del vector de estados
@@ -181,9 +181,9 @@ class ControlEnv(gym.Env):
 
         # Calcular la recompensa
         # Calcular la recompensa
-        self.reward_1 = ( self._calculate_reward(new_state) ) / (self.max_theta ** 2)
-        self.reward_2 = self._secondary_reward(action, self.last_action)/4
-        reward = 0.9 * self.reward_1 + 0.1 * self.reward_2
+        self.reward_1 = ( self._calculate_reward(new_state) ) # / (self.max_theta ** 2)
+        # self.reward_2 = self._secondary_reward(action, self.last_action) # /4
+        reward = 1 * self.reward_1 # + 0.1 * self.reward_2
 
         #Se guarda la ultima accion tomada para utilizarla en el reward
         self.last_action = action

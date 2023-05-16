@@ -218,7 +218,7 @@ void receive_confirmation() {
     Serial.print("<");
     Serial.print(ang_x);
     Serial.print(",");
-    Serial.print(gx);
+    Serial.print(gx/131);
     Serial.print(",");
     Serial.print(leftMotor);
     Serial.print(",");

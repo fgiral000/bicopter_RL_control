@@ -105,7 +105,7 @@ def train_agent(env, time_steps,input_callback):
         sde_sample_freq = 1000,
         verbose=1,
         seed=78,
-        tensorboard_log="./sac_testing_v0/")
+        tensorboard_log="C:/Users/dgtss/ComsArduino/sac_testing_v0")
 
     sac.learn(total_timesteps = time_steps, callback = input_callback)
 
