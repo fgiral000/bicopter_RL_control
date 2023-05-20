@@ -1,6 +1,8 @@
 import serial
 import time
 import logging
+import yaml
+from gym.wrappers import FrameStack
 import gym
 import stable_baselines3
 import tensorflow as tf
@@ -49,7 +51,7 @@ def random_agent(env, episodes = 1):
 
 def read_hyperparams():
     # Carga el archivo YAML
-    with open('C:/Users/B1500/OneDrive/Escritorio/RL control UAV/Control_Balancin/hyperparam.yaml', 'r') as f:
+    with open('C:/Users/dgtss/Bicopter_RL/bicopter_RL_control/hyperparam.yaml', 'r') as f:
         hiperparametros = yaml.safe_load(f)
 
     # Accede a los hiperparámetros como un diccionario
@@ -84,6 +86,11 @@ def read_hyperparams():
 
     return hyperparams
 
+def read_hyperparmeters():
+    with open('hyperparam.yaml') as f:
+        config = yaml.load(f, Loader=yaml.BaseLoader)  # config is dict
+
+    return config
 
 
 def train_agent(env, time_steps,input_callback):
@@ -93,19 +100,19 @@ def train_agent(env, time_steps,input_callback):
     sac = SAC('MlpPolicy',
         env=env,
         batch_size= 256,
-        learning_rate= 7.3e-4,
-        buffer_size= 1000000,
+        learning_rate= 3e-4,
+        buffer_size= 10000,
         ent_coef= 'auto',
         gamma= 0.99,
         tau = 0.01,
-        train_freq= 1,
+        train_freq= (5, 'episode'),
         gradient_steps= 1,
-        learning_starts= 10000,
+        learning_starts= 10,
         use_sde=True,
-        sde_sample_freq = 1000,
+        sde_sample_freq = 32,
         verbose=1,
-        seed=78,
-        tensorboard_log="C:/Users/dgtss/ComsArduino/sac_testing_v0")
+        seed=42,
+        tensorboard_log="./sac_testing_v0")
 
     sac.learn(total_timesteps = time_steps, callback = input_callback)
 
@@ -128,6 +135,8 @@ if __name__ == "__main__":
     input("Presiona la tecla enter cuando todo este preparado",)
     #Se establece el entorno de entrenamiento
     env = ControlEnv(arduino_port)
+    env = FrameStack(env,num_stack=2)
+
     logging.info("Estableciendo entorno de entrenamiento")
     time.sleep(2)
     env.reset()
@@ -140,7 +149,7 @@ if __name__ == "__main__":
 
     #Se empieza con el entrenamiento del agente
     #random_agent(env=env)
-    train_agent(env, time_steps = 200 * 500, input_callback = r_callback)
+    train_agent(env, time_steps = 500 * 100, input_callback = r_callback)
 
     #Se finaliza todo el setup del arduino
     env.reset()

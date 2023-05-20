@@ -4,24 +4,27 @@ import tensorflow as tf
 import tensorboard
 import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.logger import Logger
 
 class TensorboardCallback(BaseCallback):
     def __init__(self, verbose=1):
         super(TensorboardCallback, self).__init__(verbose)
         self.primary_reward = 0
         self.secondary_reward = 0
-        self.log_path = 'C:/Users/dgtss/ComsArduino/sac_testing_v0'
+        self.log_path = './sac_testing_v0'
 
     def _on_rollout_end(self) -> None:
-        self.logger.record("rewards/primary_reward", self.primary_reward)
-        self.logger.record("rewards/secondary_reward", self.secondary_reward)
+        pass
 
 
     def _on_step(self) -> bool:
 
         # Sacar los datos del env
         self.primary_reward = self.training_env.get_attr('reward_1')[0]
-        self.secondary_reward = self.training_env.get_attr('reward_2')[0]
+        self.time_reward = self.training_env.get_attr('reward_2')[0]
+        self.goal_reward = self.training_env.get_attr('reward_3')[0]
+        self.timeout_reward = self.training_env.get_attr('reward_4')[0]
+
         self.space_state = self.training_env.get_attr('current_state')[0]
         self.action = self.training_env.get_attr('last_action')[0]
         self.max_theta = self.training_env.get_attr('max_theta')[0]
@@ -62,6 +65,20 @@ class TensorboardCallback(BaseCallback):
         Td_denorm = actions_denorm[1]
         self.logger.record("action_space/Right_Thrust_Denorm", Td_denorm)
 
+        # Rewards
+        self.total_reward = self.primary_reward + self.time_reward + self.goal_reward + self.timeout_reward
+
+        self.logger.record("rewards/total_reward", self.total_reward)
+
+        self.logger.record("rewards/primary_reward", self.primary_reward)
+
+        self.logger.record("rewards/time_reward", self.time_reward)
+
+        self.logger.record("rewards/goal_reward", self.goal_reward)
+
+        self.logger.record("rewards/timeout_reward", self.timeout_reward)
+
+
         # Imprimo todo
         self.logger.dump(self.num_timesteps)
 
@@ -83,7 +100,7 @@ class ControlEnv(gym.Env):
         # Frecuencia de acciones de 50Hz
         self.action_freq = 50
         # Time out de 200 time steps
-        self.max_steps = 200
+        self.max_steps = 500
 
         # Máximo reward
         self.max_reward = 0.0
@@ -91,10 +108,12 @@ class ControlEnv(gym.Env):
         self.max_reward_steps = 20
         self.current_reward_steps = 0
 
+        self.counter = 0            # Numero de steps consecutivos dentro de la zona buena
+
 
         ###Valores maximos de los parametros del vector de estado
         self.max_theta = 30
-        self.max_aceleration = 20000
+        self.max_aceleration = 20000/131
 
 
         #Valores del vector de estados
@@ -122,7 +141,7 @@ class ControlEnv(gym.Env):
 
 
 
-    def reset(self):
+    def reset(self,seed=42):
         # Reiniciar el estado y el contador de time steps y reward steps
 
         self.current_step = 0
@@ -173,17 +192,27 @@ class ControlEnv(gym.Env):
         # Calcular el nuevo estado a partir de la acción y el estado actual
         ##### CALCULAR ESTADO DESDE EL ARDUINO ########
         new_arduino_data = self.get_observation(self.arduino_port)
-        ##############################################################################
-        #AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO
-        ###################################################################################
+        ########################################################################################
+        # AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO #
+        ########################################################################################
 
         new_state = np.array([new_arduino_data[0] / self.max_theta, new_arduino_data[1] / self.max_aceleration, self.theta_referencia, self.current_step], dtype=np.float32)
 
-        # Calcular la recompensa
-        # Calcular la recompensa
+        # ---------------------------- RECOMPENSAS -------------------------
+        # Recompensa principal, por diferencia entre estado real y deseado
         self.reward_1 = ( self._calculate_reward(new_state) ) # / (self.max_theta ** 2)
-        # self.reward_2 = self._secondary_reward(action, self.last_action) # /4
-        reward = 1 * self.reward_1 # + 0.1 * self.reward_2
+
+        # Penalizacion por tiempo que tardas en conseguirlo
+        self.reward_2 = self._time_reward()
+
+        # Recompensa por conseguir el objetivo
+        self.reward_3,done_reach = self._goal_reached()
+
+        # Penalizacion por timeout
+        self.reward_4,done_timeout = self._timeout()
+
+        reward = self.reward_1 + self.reward_2 + self.reward_3 + self.reward_4
+        # -------------------------------------------------------------------
 
         #Se guarda la ultima accion tomada para utilizarla en el reward
         self.last_action = action
@@ -193,23 +222,54 @@ class ControlEnv(gym.Env):
             self.current_reward_steps += 1
         else:
             self.current_reward_steps = 0
+
         # Comprobar si se ha alcanzado el time out o el early stopping
-        done = self.current_step >= self.max_steps or self.current_reward_steps >= self.max_reward_steps
+        done = done_timeout or self.current_reward_steps >= self.max_reward_steps or done_reach
+
         # Actualizar el estado actual
         self.current_state = new_state
-
 
         # Devolver el nuevo estado, la recompensa, si el episodio ha terminado y un diccionario vacío de información adicional
         return self.current_state, reward, done, {}
 
 
 
-
     def _calculate_reward(self, state):
         # Calcular la recompensa como la suma de los componentes del estado
-        return - (state[0] - state[2]) ** 2
+        return np.clip((- (state[0] - state[2]) ** 2 + 9/625)*625*10/9, -20, 20)
+
+    def _time_reward(self):
+        #  Cada paso que des quitas 1 de recompensa, para incentivar que se de prisa
+        return -1
+
+    def _goal_reached(self):
+
+        if self.reward_1 >= 0:
+            self.counter+=1
+        else:
+            self.counter = 0
+
+        if self.counter >= 100:
+            reward = 100
+            done = True
+            self.counter = 0
+
+        else:
+            reward = 0
+            done = False
+
+        return reward, done
 
 
+    def _timeout(self):
+        if self.current_step >= self.max_steps:
+            done = True
+            reward = -100
+        else:
+            done = False
+            reward = 0
+
+        return reward, done
 
 
     def _secondary_reward(self, action, last_action):
@@ -252,6 +312,6 @@ class ControlEnv(gym.Env):
 
 
     def denormalize_action(self, action):
-        return ( (action + 1) * (300/2) ) + 1000
+        return ( (action + 1) * (300/2) ) + 1050
 
 
