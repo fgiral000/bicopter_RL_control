@@ -1,6 +1,5 @@
 import gym
 from gym import spaces
-import tensorflow as tf
 import tensorboard
 import numpy as np
 from stable_baselines3.common.callbacks import BaseCallback
@@ -96,7 +95,7 @@ class ControlEnv(gym.Env):
         # Espacio de acciones continuas entre 1000 y 1500
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         # Espacio de estados de dimensión 6
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32)
         # Frecuencia de acciones de 50Hz
         self.action_freq = 50
         # Time out de 200 time steps
@@ -126,7 +125,7 @@ class ControlEnv(gym.Env):
         self.current_step = 0
 
         # Estado actual
-        self.current_state = np.array([self.theta_inicial, self.theta_aceleracion_inicial, self.theta_referencia, self.current_step  / self.max_steps], dtype=np.float32)
+        self.current_state = np.array([self.theta_inicial, self.theta_aceleracion_inicial, self.theta_referencia, self.current_step  / self.max_steps, -1, -1], dtype=np.float32)
 
 
         self.last_action = None
@@ -160,9 +159,11 @@ class ControlEnv(gym.Env):
         self.theta_inicial = self.arduino_values[0] / self.max_theta
         self.theta_aceleracion_inicial = self.arduino_values[1] / self.max_aceleration
         self.current_step = 0
+        last_Ti = self.last_action[0]
+        last_Td = self.last_action[1]
 
 
-        self.current_state = np.array([self.theta_inicial, self.theta_aceleracion_inicial, self.theta_referencia, self.current_step], dtype=np.float32)
+        self.current_state = np.array([self.theta_inicial, self.theta_aceleracion_inicial, self.theta_referencia, self.current_step, last_Ti, last_Td], dtype=np.float32)
 
         # self.current_state = np.array(self.current_state, dtype=np.float32)
 
@@ -196,7 +197,7 @@ class ControlEnv(gym.Env):
         # AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO #
         ########################################################################################
 
-        new_state = np.array([new_arduino_data[0] / self.max_theta, new_arduino_data[1] / self.max_aceleration, self.theta_referencia, self.current_step], dtype=np.float32)
+        new_state = np.array([new_arduino_data[0] / self.max_theta, new_arduino_data[1] / self.max_aceleration, self.theta_referencia, self.current_step, action[0], action[1]], dtype=np.float32)
 
         # ---------------------------- RECOMPENSAS -------------------------
         # Recompensa principal, por diferencia entre estado real y deseado
