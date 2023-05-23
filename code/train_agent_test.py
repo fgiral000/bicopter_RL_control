@@ -5,7 +5,6 @@ import yaml
 from gym.wrappers import FrameStack
 import gym
 import stable_baselines3
-import tensorflow as tf
 import tensorboard
 import yaml
 from gym_env_balancin import ControlEnv
@@ -107,7 +106,7 @@ def train_agent(env, time_steps,input_callback):
         tau = 0.01,
         train_freq= (5, 'episode'),
         gradient_steps= 1,
-        learning_starts= 10,
+        learning_starts= 10000,
         use_sde=True,
         sde_sample_freq = 32,
         verbose=1,
@@ -135,7 +134,7 @@ if __name__ == "__main__":
     input("Presiona la tecla enter cuando todo este preparado",)
     #Se establece el entorno de entrenamiento
     env = ControlEnv(arduino_port)
-    env = FrameStack(env,num_stack=2)
+    env = FrameStack(env,num_stack=5)
 
     logging.info("Estableciendo entorno de entrenamiento")
     time.sleep(2)
