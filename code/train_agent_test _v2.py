@@ -2,22 +2,23 @@ import serial
 import time
 import logging
 import yaml
-from gym.wrappers import FrameStack
+from gym.wrappers import FrameStack, NormalizeReward, NormalizeObservation
 import gym
 import stable_baselines3
 #import tensorflow as tf
 import tensorboard
 import yaml
-from gym_env_balancin import ControlEnv
-from gym_env_balancin import TensorboardCallback
+from gym_env_balancin_v2 import ControlEnv
+from gym_env_balancin_v2 import TensorboardCallback
 from stable_baselines3 import SAC
+import torch
 
 
 ######### CODIGO PRUEBA DE ENTRENAMIENTO DE SOFT ACTOR-CRITIC ###########
 
 def setup_arduino():
     """Funcion para hacer el septup del arduino"""
-    arduino = serial.Serial('COM11', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
+    arduino = serial.Serial('COM5', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
     print("Correctamente conectado")
 
     time.sleep(3)
@@ -28,7 +29,7 @@ def setup_arduino():
 
 
 
-def random_agent(env, episodes = 1):
+def random_agent(env, episodes = 2):
     """Agente que toma acciones aleatorias que sirve para testear el entorno"""
 
     agente = SAC('MlpPolicy', env)
@@ -41,12 +42,12 @@ def random_agent(env, episodes = 1):
         done = False
         rewards = []
         while not done:
-            action, _ = agente.predict(observation, deterministic=True) # Tomar una acción aleatoria
+            action, _ = agente.predict(observation, deterministic=False) # Tomar una acción aleatoria
             observation, reward, done, _ = env.step(action)
             rewards.append(reward)
-            print(action)
-            print(observation)
-            print(len(rewards))
+            print(observation, action)
+            # print(observation)
+            # print(len(rewards))
 
 
 def read_hyperparams():
@@ -97,22 +98,31 @@ def train_agent(env, time_steps,input_callback):
     """Funcion para entrenar el agente"""
     #hyperparams = read_hyperparams()
 
+    net_arch = {
+        "small": dict(pi=[64, 64], vf=[64, 64], qf = [64, 64]),
+        "medium": dict(pi=[256, 256], vf=[256, 256], qf=[256,256]),
+    }["small"]
+
+    policy_kw = dict(activation_fn = torch.nn.Tanh, net_arch = net_arch)
+
     sac = SAC('MlpPolicy',
-        env=env,
-        batch_size= 256,
-        learning_rate= 3e-4,
-        buffer_size= 500000,
-        ent_coef= 'auto',
-        gamma= 0.99,
-        tau = 0.01,
-        train_freq= 1,
-        gradient_steps= 1,
-        learning_starts= 10000,
-        use_sde=True,
-        sde_sample_freq = 500,
-        verbose=1,
-        seed=42,
-        tensorboard_log="./sac_testing_v3")
+                env=env,
+                batch_size= 512,
+                learning_rate= 3e-4,
+                buffer_size= 10000,
+                ent_coef= 'auto',
+                gamma= 0.90,
+                tau = 0.01,
+                train_freq= 8,
+                gradient_steps= 8,
+                learning_starts= 2048,
+                use_sde=True,
+                sde_sample_freq = 512,
+                verbose=2,
+                seed=68,
+                tensorboard_log="./sac_testing_v3",
+                policy_kwargs = policy_kw,
+                )
 
     sac.learn(total_timesteps = time_steps, callback = input_callback)
 
@@ -135,7 +145,9 @@ if __name__ == "__main__":
     input("Presiona la tecla enter cuando todo este preparado",)
     #Se establece el entorno de entrenamiento
     env = ControlEnv(arduino_port)
-    env = FrameStack(env,num_stack=5)
+    # env = FrameStack(env,num_stack=2)
+    env = NormalizeObservation(env)
+    env = NormalizeReward(env)
 
     logging.info("Estableciendo entorno de entrenamiento")
     time.sleep(2)
