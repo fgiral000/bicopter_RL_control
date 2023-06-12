@@ -50,10 +50,10 @@ if __name__ == "__main__":
     random_policy = d3rlpy.algos.RandomPolicy()
 
     # prepare experience replay buffer
-    buffer = d3rlpy.online.buffers.ReplayBuffer(maxlen=100000, env=env)
+    buffer = d3rlpy.online.buffers.ReplayBuffer(maxlen=10000, env=env)
 
     # start data collection
-    random_policy.collect(env, buffer, n_steps=100000)
+    random_policy.collect(env, buffer, n_steps=10000)
 
     # export as MDPDataset
     dataset = buffer.to_mdp_dataset()

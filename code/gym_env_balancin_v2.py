@@ -150,6 +150,7 @@ class ControlEnv(gym.Env):
         self.max_angle_steps = 0
 
         self.last_action = np.array([-1,-1], dtype=np.float32)
+        self.filtered_action_past = self.last_action
 
         self.send_action(np.array([-1,-1], dtype=np.float32), self.arduino_port)
         #Se deben reiniciar tambien los valores de estado iniciales
@@ -184,7 +185,10 @@ class ControlEnv(gym.Env):
     def step(self, action):
 
         ####### ENVIAR ACCCION TOMADA AL ARDUINO ########
-        self.send_action(action, self.arduino_port)
+
+        filtered_action = 0.8 * self.filtered_action_past + 0.2 * action
+
+        self.send_action(filtered_action, self.arduino_port)
 
 
         # Incrementar el contador de time steps
@@ -238,6 +242,7 @@ class ControlEnv(gym.Env):
         # -------------------------------------------------------------------
 
         #Se guarda la ultima accion tomada para utilizarla en el reward
+        self.filtered_action_past = filtered_action
         self.last_action = action
 
         # Actualizar el contador de reward steps si se alcanza el máximo reward

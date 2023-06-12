@@ -12,9 +12,11 @@ import pickle as pkl
 from typing import Any, Dict
 import serial
 import gym
+from gym.wrappers import NormalizeReward, NormalizeObservation
 import torch
 import torch.nn as nn
 from stable_baselines3 import SAC
+from sb3_contrib import TQC
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import VecEnv
@@ -44,18 +46,20 @@ arduino_port = setup_arduino()
 
 
 
-N_TRIALS = 8
+N_TRIALS = 12
 N_JOBS = 1
-N_STARTUP_TRIALS = 5
+N_STARTUP_TRIALS = 4
 N_EVALUATIONS = 2
-N_TIMESTEPS = int(1e4)
+N_TIMESTEPS = int(5e3)
 EVAL_FREQ = int(N_TIMESTEPS / N_EVALUATIONS)
 N_EVAL_EPISODES = 5
-N_EVAL_ENVS = 2
-TIMEOUT = int(60 * 30)  # 15 minutes
+N_EVAL_ENVS = 1
+TIMEOUT = int(60 * 90)  # 90 minutes
 
 
 ENV_ID = ControlEnv(arduino_port)
+ENV_ID = NormalizeObservation(ENV_ID)
+ENV_ID = NormalizeReward(ENV_ID)
 
 DEFAULT_HYPERPARAMS = {
     "policy": "MlpPolicy",
@@ -88,10 +92,13 @@ def sample_sac_params(trial: optuna.Trial) -> Dict[str, Any]:
     # ent_coef = trial.suggest_categorical('ent_coef', ['auto', 0.5, 0.1, 0.05, 0.01, 0.0001])
     ent_coef = "auto"
     # You can comment that out when not using gSDE
-    log_std_init = trial.suggest_uniform("log_std_init", -4, 1)
+    log_std_init = trial.suggest_float("log_std_init", -4, 1)
     # NOTE: Add "verybig" to net_arch when tuning HER
     net_arch = trial.suggest_categorical("net_arch", ["small", "medium", "big"])
-    activation_fn = trial.suggest_categorical('activation_fn', [nn.Tanh, nn.ReLU, nn.ELU, nn.LeakyReLU])
+    activation_fn = trial.suggest_categorical('activation_fn', ["tanh", "relu", "gelu"])
+    use_sde = True
+    use_sde_at_warmup = False
+    sde_sample_freq = trial.suggest_categorical('sde_sample_freq', [16, 128, 256, 512])
 
     net_arch = {
         "small": [64, 64],
@@ -101,6 +108,12 @@ def sample_sac_params(trial: optuna.Trial) -> Dict[str, Any]:
         # "large": [256, 256, 256],
         # "verybig": [512, 512, 512],
     }[net_arch]
+
+    activation_fn = {
+        "tanh": nn.Tanh,
+        "relu": nn.ReLU,
+        "gelu": nn.GELU,
+    }[activation_fn]
 
     target_entropy = "auto"
     # if ent_coef == 'auto':
@@ -118,9 +131,31 @@ def sample_sac_params(trial: optuna.Trial) -> Dict[str, Any]:
         "ent_coef": ent_coef,
         "tau": tau,
         "target_entropy": target_entropy,
+        "use_sde": use_sde,
+        "use_sde_at_warmup": use_sde_at_warmup,
+        "sde_sample_freq": sde_sample_freq,
         "policy_kwargs": dict(log_std_init=log_std_init, net_arch=net_arch, activation_fn=activation_fn),
     }
 
+
+    return hyperparams
+
+
+def sample_tqc_params(trial: optuna.Trial) -> Dict[str, Any]:
+    """
+    Sampler for TQC hyperparams.
+
+    :param trial:
+    :return:
+    """
+    # TQC is SAC + Distributional RL
+    hyperparams = sample_sac_params(trial)
+
+    n_quantiles = trial.suggest_int("n_quantiles", 5, 50)
+    top_quantiles_to_drop_per_net = trial.suggest_int("top_quantiles_to_drop_per_net", 0, n_quantiles - 1)
+
+    hyperparams["policy_kwargs"].update({"n_quantiles": n_quantiles})
+    hyperparams["top_quantiles_to_drop_per_net"] = top_quantiles_to_drop_per_net
 
     return hyperparams
 
@@ -130,7 +165,7 @@ class TrialEvalCallback(EvalCallback):
 
     def __init__(
         self,
-        eval_env: VecEnv,
+        eval_env,
         trial: optuna.Trial,
         n_eval_episodes: int = 5,
         eval_freq: int = 10000,
@@ -165,11 +200,13 @@ def objective(trial: optuna.Trial) -> float:
 
     kwargs = DEFAULT_HYPERPARAMS.copy()
     # Sample hyperparameters
-    kwargs.update(sample_sac_params(trial))
+    kwargs.update(sample_tqc_params(trial))
     # Create the RL model
-    model = SAC(**kwargs)
+    model = TQC(**kwargs)
     # Create env used for evaluation
     eval_envs = ControlEnv(arduino_port)
+    eval_envs = NormalizeObservation(eval_envs)
+    eval_envs = NormalizeReward(eval_envs)
     # Create the callback that will periodically evaluate
     # and report the performance
     eval_callback = TrialEvalCallback(
@@ -180,9 +217,11 @@ def objective(trial: optuna.Trial) -> float:
         deterministic=True,
     )
 
+    r_callback = TensorboardCallback()
+
     nan_encountered = False
     try:
-        model.learn(N_TIMESTEPS, callback=eval_callback)
+        model.learn(N_TIMESTEPS, callback=[eval_callback,r_callback])
     except AssertionError as e:
         # Sometimes, random hyperparams can generate NaN
         print(e)

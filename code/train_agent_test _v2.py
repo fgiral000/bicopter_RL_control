@@ -11,6 +11,7 @@ import yaml
 from gym_env_balancin_v2 import ControlEnv
 from gym_env_balancin_v2 import TensorboardCallback
 from stable_baselines3 import SAC
+from sb3_contrib import TQC
 import torch
 
 
@@ -48,6 +49,26 @@ def random_agent(env, episodes = 2):
             print(observation, action)
             # print(observation)
             # print(len(rewards))
+
+def inference_agent(env, episodes):
+    """Agente que toma acciones aleatorias que sirve para testear el entorno"""
+
+    agente = SAC.load('C:/Users/B1500/OneDrive/Escritorio/repo_bicopter_RL/bicopter_RL_control/model_trained_v00.zip')
+    observation = env.reset()
+    #Se inicializa una lista para almacenar los rewards de un episodio
+    ep_returns = []
+
+
+    for _ in range(episodes):
+        observation = env.reset()
+        done = False
+        rewards = []
+        while not done:
+            action, _ = agente.predict(observation, deterministic=True) # Tomar una acción aleatoria
+            new_observation, reward, done, _ = env.step(action)
+            observation = new_observation
+            rewards.append(reward)
+            print(reward)
 
 
 def read_hyperparams():
@@ -105,7 +126,26 @@ def train_agent(env, time_steps,input_callback):
 
     policy_kw = dict(activation_fn = torch.nn.Tanh, net_arch = net_arch)
 
-    sac = SAC('MlpPolicy',
+    # sac = SAC('MlpPolicy',
+    #             env=env,
+    #             batch_size= 512,
+    #             learning_rate= 3e-4,
+    #             buffer_size= 10000,
+    #             ent_coef= 'auto',
+    #             gamma= 0.90,
+    #             tau = 0.01,
+    #             train_freq= 8,
+    #             gradient_steps= 8,
+    #             learning_starts= 2048,
+    #             use_sde=True,
+    #             sde_sample_freq = 512,
+    #             verbose=2,
+    #             seed=68,
+    #             tensorboard_log="./sac_testing_v3",
+    #             policy_kwargs = policy_kw,
+    #             )
+    
+    tqc = TQC('MlpPolicy',
                 env=env,
                 batch_size= 512,
                 learning_rate= 3e-4,
@@ -117,16 +157,15 @@ def train_agent(env, time_steps,input_callback):
                 gradient_steps= 8,
                 learning_starts= 2048,
                 use_sde=True,
-                sde_sample_freq = 512,
+                sde_sample_freq = 128,
                 verbose=2,
                 seed=68,
                 tensorboard_log="./sac_testing_v3",
-                policy_kwargs = policy_kw,
-                )
+                policy_kwargs = policy_kw,)
 
-    sac.learn(total_timesteps = time_steps, callback = input_callback)
+    tqc.learn(total_timesteps = time_steps, callback = input_callback)
 
-    sac.save(path="model_trained_v00")
+    tqc.save(path="model_trained_v00")
 
 
 
@@ -156,12 +195,13 @@ if __name__ == "__main__":
 
     input("Vuelve a presionar enter para que el agente se ejecute",)
 
-    # Se definen las variables a monitorizar en Tensorboard
+    # # Se definen las variables a monitorizar en Tensorboard
     r_callback = TensorboardCallback()
 
-    #Se empieza con el entrenamiento del agente
-    #random_agent(env=env)
+    # #Se empieza con el entrenamiento del agente
+    # #random_agent(env=env)
     train_agent(env, time_steps = 500 * 100, input_callback = r_callback)
+    # inference_agent(env, 3)
 
     #Se finaliza todo el setup del arduino
     env.reset()
