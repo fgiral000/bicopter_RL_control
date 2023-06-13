@@ -186,9 +186,9 @@ class ControlEnv(gym.Env):
 
         ####### ENVIAR ACCCION TOMADA AL ARDUINO ########
 
-        filtered_action = 0.8 * self.filtered_action_past + 0.2 * action
+        # filtered_action = 0.8 * self.filtered_action_past + 0.2 * action
 
-        self.send_action(filtered_action, self.arduino_port)
+        self.send_action(action, self.arduino_port)
 
 
         # Incrementar el contador de time steps
@@ -242,7 +242,7 @@ class ControlEnv(gym.Env):
         # -------------------------------------------------------------------
 
         #Se guarda la ultima accion tomada para utilizarla en el reward
-        self.filtered_action_past = filtered_action
+        # self.filtered_action_past = filtered_action
         self.last_action = action
 
         # Actualizar el contador de reward steps si se alcanza el máximo reward
@@ -266,9 +266,9 @@ class ControlEnv(gym.Env):
             #reward-=1000
             done = True
 
-        # elif self.max_angle_steps == 50:
-        #     reward-=100
-        #     done = True
+        elif self.max_angle_steps == 20:
+            reward-=100
+            done = True
 
         else:
             done = False

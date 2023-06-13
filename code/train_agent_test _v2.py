@@ -122,30 +122,13 @@ def train_agent(env, time_steps,input_callback):
     net_arch = {
         "small": dict(pi=[64, 64], vf=[64, 64], qf = [64, 64]),
         "medium": dict(pi=[256, 256], vf=[256, 256], qf=[256,256]),
+        "small_med": dict(pi=[128, 128], vf=[256, 256], qf = [256, 256])
     }["small"]
 
+    # policy_kw = dict(activation_fn = torch.nn.Tanh, net_arch = net_arch, n_quantiles = 20, log_std_init = -1)
     policy_kw = dict(activation_fn = torch.nn.Tanh, net_arch = net_arch)
 
-    # sac = SAC('MlpPolicy',
-    #             env=env,
-    #             batch_size= 512,
-    #             learning_rate= 3e-4,
-    #             buffer_size= 10000,
-    #             ent_coef= 'auto',
-    #             gamma= 0.90,
-    #             tau = 0.01,
-    #             train_freq= 8,
-    #             gradient_steps= 8,
-    #             learning_starts= 2048,
-    #             use_sde=True,
-    #             sde_sample_freq = 512,
-    #             verbose=2,
-    #             seed=68,
-    #             tensorboard_log="./sac_testing_v3",
-    #             policy_kwargs = policy_kw,
-    #             )
-    
-    tqc = TQC('MlpPolicy',
+    sac = SAC('MlpPolicy',
                 env=env,
                 batch_size= 512,
                 learning_rate= 3e-4,
@@ -157,15 +140,40 @@ def train_agent(env, time_steps,input_callback):
                 gradient_steps= 8,
                 learning_starts= 2048,
                 use_sde=True,
-                sde_sample_freq = 128,
+                sde_sample_freq = 512,
                 verbose=2,
                 seed=68,
                 tensorboard_log="./sac_testing_v3",
-                policy_kwargs = policy_kw,)
+                policy_kwargs = policy_kw,
+                )
+    
+    # tqc = TQC('MlpPolicy',
+    #             env=env,
+    #             batch_size= 512,
+    #             learning_rate= 7e-4,
+    #             buffer_size= 10000,
+    #             ent_coef= 'auto',
+    #             gamma= 0.95,
+    #             tau = 0.005,
+    #             train_freq= 32,
+    #             gradient_steps= 32,
+    #             learning_starts= 4000,
+    #             use_sde=True,
+    #             sde_sample_freq = 128,
+    #             verbose=2,
+    #             seed=68,
+    #             tensorboard_log="./sac_testing_v4",
+    #             policy_kwargs = policy_kw,
+    #             top_quantiles_to_drop_per_net=1,
+    #             )
+    
+    # tqc = SAC.load("model_trained_v00_sdg512.zip", env=env)
+    
+    
 
-    tqc.learn(total_timesteps = time_steps, callback = input_callback)
+    sac.learn(total_timesteps = time_steps, callback = input_callback)
 
-    tqc.save(path="model_trained_v00")
+    sac.save(path="tqc_model_trained_v00")
 
 
 
@@ -200,7 +208,7 @@ if __name__ == "__main__":
 
     # #Se empieza con el entrenamiento del agente
     # #random_agent(env=env)
-    train_agent(env, time_steps = 500 * 100, input_callback = r_callback)
+    train_agent(env, time_steps = 500 * 50, input_callback = r_callback)
     # inference_agent(env, 3)
 
     #Se finaliza todo el setup del arduino
