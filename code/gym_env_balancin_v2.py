@@ -12,7 +12,7 @@ class TensorboardCallback(BaseCallback):
         super(TensorboardCallback, self).__init__(verbose)
         self.primary_reward = 0
         self.secondary_reward = 0
-        self.log_path = './sac_testing_v3'
+        self.log_path = './sac_testing_v5'
 
     def _on_rollout_end(self) -> None:
         pass
@@ -38,15 +38,15 @@ class TensorboardCallback(BaseCallback):
         theta = state_space[0]
         self.logger.record("state_space/theta", theta)
 
-        theta_denorm = theta*self.max_theta
-        self.logger.record("state_space/theta_denorm", theta_denorm)
+        # theta_denorm = theta*self.max_theta
+        # self.logger.record("state_space/theta_denorm", theta_denorm)
 
 
         theta_dot = state_space[1]
         self.logger.record("state_space/theta_dot", theta_dot)
 
-        theta_dot_denorm = theta_dot*self.max_velocity
-        self.logger.record("state_space/theta_dot_denorm", theta_dot_denorm)
+        # theta_dot_denorm = theta_dot*self.max_velocity
+        # self.logger.record("state_space/theta_dot_denorm", theta_dot_denorm)
 
 
         # Espacio de acciones
