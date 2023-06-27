@@ -97,7 +97,7 @@ class ControlEnv(gym.Env):
         # Espacio de acciones continuas entre 1000 y 1500
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         # Espacio de estados de dimensión 6
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(10,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(5,), dtype=np.float32)
         # Frecuencia de acciones de 50Hz
         self.action_freq = 50
         # Time out de 200 time steps
@@ -127,7 +127,7 @@ class ControlEnv(gym.Env):
         self.current_step = 0
 
         # Estado actual
-        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, self.current_step, -1.0,-1.0, 0, 0, 0, 0], dtype=np.float32)
+        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, abs(self.theta_inicial - self.theta_referencia),self.current_step], dtype=np.float32)
 
 
         self.last_action = None
@@ -153,6 +153,7 @@ class ControlEnv(gym.Env):
         self.filtered_action_past = self.last_action
 
         self.send_action(np.array([-1,-1], dtype=np.float32), self.arduino_port)
+        time.sleep(2)
         #Se deben reiniciar tambien los valores de estado iniciales
         self.arduino_values = self.get_observation(self.arduino_port)
         ##############################################################################
@@ -165,7 +166,7 @@ class ControlEnv(gym.Env):
         self.current_step = 0
 
         self.previous_shaping = None
-        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, self.current_step, self.last_action[0],self.last_action[1], 0,0,0,0], dtype=np.float32)
+        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, abs(self.theta_inicial - self.theta_referencia), self.current_step], dtype=np.float32)
 
         # self.current_state = np.array(self.current_state, dtype=np.float32)
 
@@ -175,7 +176,7 @@ class ControlEnv(gym.Env):
         #####TAMBIEN HAY QUE PONER LOS MOTORES A 0 CUANDO SE ACABA EL EPISODIO, PERO SIN NECESIDAD DE APAGAR LA CORRIENTE
         ############################################################################################################
 
-        time.sleep(1)
+        
 
         # Devolver el estado actual
         return self.current_state
@@ -202,9 +203,7 @@ class ControlEnv(gym.Env):
         # AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO #
         ########################################################################################
 
-        new_state = np.array([new_arduino_data[0] , new_arduino_data[1], self.theta_referencia, self.current_step, action[0], action[1], 
-                              self.current_state[0]-new_arduino_data[0], self.current_state[1] - new_arduino_data[1],
-                              self.current_state[4]- action[0], self.current_state[5]- action[1]], dtype=np.float32)
+        new_state = np.array([new_arduino_data[0] , new_arduino_data[1], self.theta_referencia, abs(new_arduino_data[0] - self.theta_referencia),self.current_step], dtype=np.float32)
 
         # ---------------------------- RECOMPENSAS -------------------------
 
@@ -233,7 +232,7 @@ class ControlEnv(gym.Env):
         if abs(new_state[0] - new_state[2]) <= (10):
             reward = 1 - (abs(new_state[0] - new_state[2]) / self.max_theta)
 
-        reward = 0.8 * reward - 0.1 * abs(action[0] - self.last_action[0]) - 0.1 * abs(action[1] - self.last_action[1])
+       # reward = 0.8 * reward - 0.1 * abs(action[0] - self.last_action[0]) - 0.1 * abs(action[1] - self.last_action[1])
         
         # if abs(new_state[1]) <= (80/self.max_velocity):
         #     reward+=0.5
@@ -246,10 +245,10 @@ class ControlEnv(gym.Env):
         self.last_action = action
 
         # Actualizar el contador de reward steps si se alcanza el máximo reward
-        if abs(new_state[0] - new_state[2]) <= (3):
-            self.current_reward_steps += 1
-        else:
-            self.current_reward_steps = 0
+        # if abs(new_state[0] - new_state[2]) <= (3):
+        #     self.current_reward_steps += 1
+        # else:
+        #     self.current_reward_steps = 0
 
                
         if abs(new_state[0] - new_state[2]) >= (20):
@@ -259,8 +258,9 @@ class ControlEnv(gym.Env):
 
         # Comprobar si se ha alcanzado el time out o el early stopping
         if self.current_reward_steps == self.max_reward_steps:
-            reward+=100
-            done = True
+            # reward+=100
+            # done = True
+            pass
 
         elif self.current_step == self.max_steps:
             #reward-=1000
@@ -360,4 +360,4 @@ class ControlEnv(gym.Env):
 
 
     def denormalize_action(self, action):
-        return ( (action + 1) * (300/2) ) + 1050
+        return ( (action + 1) * (300/2) ) + 1000
