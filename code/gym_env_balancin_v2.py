@@ -122,12 +122,12 @@ class ControlEnv(gym.Env):
         #AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO
         ###################################################################################3
         self.theta_referencia = 0.0
-        self.theta_inicial = None
+        self.theta_inicial = 0.0
         self.theta_velocity_inicial = None
         self.current_step = 0
 
         # Estado actual
-        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, abs(self.theta_inicial - self.theta_referencia),self.current_step], dtype=np.float32)
+        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, (self.theta_inicial - self.theta_referencia)**2,self.current_step], dtype=np.float32)
 
 
         self.last_action = None
@@ -166,7 +166,7 @@ class ControlEnv(gym.Env):
         self.current_step = 0
 
         self.previous_shaping = None
-        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, abs(self.theta_inicial - self.theta_referencia), self.current_step], dtype=np.float32)
+        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, (self.theta_inicial - self.theta_referencia)**2, self.current_step], dtype=np.float32)
 
         # self.current_state = np.array(self.current_state, dtype=np.float32)
 
@@ -203,7 +203,7 @@ class ControlEnv(gym.Env):
         # AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO #
         ########################################################################################
 
-        new_state = np.array([new_arduino_data[0] , new_arduino_data[1], self.theta_referencia, abs(new_arduino_data[0] - self.theta_referencia),self.current_step], dtype=np.float32)
+        new_state = np.array([new_arduino_data[0] , new_arduino_data[1], self.theta_referencia, (new_arduino_data[0] - self.theta_referencia)**2,self.current_step], dtype=np.float32)
 
         # ---------------------------- RECOMPENSAS -------------------------
 
