@@ -139,13 +139,13 @@ if __name__ == "__main__":
     
     # sac = SAC.load("sac_model_trained_from_pretrained_50k.zip", env=env)
 
-    TIME_STEPS = 40_000
+    TIME_STEPS = 30_000
     CALLBACKS = [r_callback, parallel_callback]
     
     sac.learn(total_timesteps = TIME_STEPS, callback = CALLBACKS, tb_log_name="tqc_state_space_VecEnv")
 
     sac.save(path="tqc_model_test_VecEnv")
-    sac.save_replay_buffer("replay_buffer_tqc_training__VecEnv")
+    sac.save_replay_buffer("replay_buffer_tqc_training_VecEnv")
     env.save("vec_normalize.pkl")
 
     #Se finaliza todo el setup del arduino
