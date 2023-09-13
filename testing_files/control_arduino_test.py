@@ -1,6 +1,7 @@
 import serial
 import numpy as np
 import time
+import random
 
 # Open arduinoial port
 # arduino = serial.Serial('COM5', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
@@ -100,18 +101,18 @@ if __name__ == "__main__":
 
     input("Presiona la tecla enter cuando este preparado",)
     while True:
-        time.sleep(2)
+        #time.sleep(2)
         print("Ya estas aqui")
         print(arduino.readline().decode())
         try:
             for array in [[1100.0,1100.0], [1300.0, 1150.0], [1100.0,1300.0]]:
-                sendSequenceToArduino(array)
+                sendSequenceToArduino([random.uniform(1000.0, 1300.0), random.uniform(1000.0, 1300.0)])
                 print("has enviado los datos:", array)
                 # data = read_serial_data()
                 # time.sleep(1)
                 data = get_data()
                 print(data)
-                time.sleep(2)
+                #time.sleep(2)
 
         except KeyboardInterrupt:
             sendSequenceToArduino([1000.0,1000.0])

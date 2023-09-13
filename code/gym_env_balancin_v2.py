@@ -1,5 +1,7 @@
-import gym
-from gym import spaces
+# import gym
+# from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 #import tensorflow as tf
 import tensorboard
 import numpy as np
@@ -12,7 +14,7 @@ class TensorboardCallback(BaseCallback):
         super(TensorboardCallback, self).__init__(verbose)
         self.primary_reward = 0
         self.secondary_reward = 0
-        self.log_path = './sac_testing_v0'
+        self.log_path = './sac_testing_v5'
 
     def _on_rollout_end(self) -> None:
         pass
@@ -21,15 +23,15 @@ class TensorboardCallback(BaseCallback):
     def _on_step(self) -> bool:
 
         # Sacar los datos del env
-        self.primary_reward = self.training_env.get_attr('reward_1')[0]
-        self.time_reward = self.training_env.get_attr('reward_2')[0]
-        self.goal_reward = self.training_env.get_attr('reward_3')[0]
-        self.timeout_reward = self.training_env.get_attr('reward_4')[0]
+        # self.primary_reward = self.training_env.get_attr('reward_1')[0]
+        # self.time_reward = self.training_env.get_attr('reward_2')[0]
+        # self.goal_reward = self.training_env.get_attr('reward_3')[0]
+        # self.timeout_reward = self.training_env.get_attr('reward_4')[0]
 
         self.space_state = self.training_env.get_attr('current_state')[0]
         self.action = self.training_env.get_attr('last_action')[0]
         self.max_theta = self.training_env.get_attr('max_theta')[0]
-        self.max_aceleration = self.training_env.get_attr('max_aceleration')[0]
+        self.max_velocity = self.training_env.get_attr('max_velocity')[0]
         # current_step = self.training_env.get_attr('current_step')[0]
 
         # Espacio de los estados
@@ -38,15 +40,15 @@ class TensorboardCallback(BaseCallback):
         theta = state_space[0]
         self.logger.record("state_space/theta", theta)
 
-        theta_denorm = theta*self.max_theta
-        self.logger.record("state_space/theta_denorm", theta_denorm)
+        # theta_denorm = theta*self.max_theta
+        # self.logger.record("state_space/theta_denorm", theta_denorm)
 
 
         theta_dot = state_space[1]
         self.logger.record("state_space/theta_dot", theta_dot)
 
-        theta_dot_denorm = theta_dot*self.max_aceleration
-        self.logger.record("state_space/theta_dot_denorm", theta_dot_denorm)
+        # theta_dot_denorm = theta_dot*self.max_velocity
+        # self.logger.record("state_space/theta_dot_denorm", theta_dot_denorm)
 
 
         # Espacio de acciones
@@ -67,17 +69,17 @@ class TensorboardCallback(BaseCallback):
         self.logger.record("action_space/Right_Thrust_Denorm", Td_denorm)
 
         # Rewards
-        self.total_reward = self.primary_reward + self.time_reward + self.goal_reward + self.timeout_reward
+        # self.total_reward = self.primary_reward + self.time_reward + self.goal_reward + self.timeout_reward
 
-        self.logger.record("rewards/total_reward", self.total_reward)
+        # self.logger.record("rewards/total_reward", self.total_reward)
 
-        self.logger.record("rewards/primary_reward", self.primary_reward)
+        # self.logger.record("rewards/primary_reward", self.primary_reward)
 
-        self.logger.record("rewards/time_reward", self.time_reward)
+        # self.logger.record("rewards/time_reward", self.time_reward)
 
-        self.logger.record("rewards/goal_reward", self.goal_reward)
+        # self.logger.record("rewards/goal_reward", self.goal_reward)
 
-        self.logger.record("rewards/timeout_reward", self.timeout_reward)
+        # self.logger.record("rewards/timeout_reward", self.timeout_reward)
 
 
         # Imprimo todo
@@ -97,7 +99,7 @@ class ControlEnv(gym.Env):
         # Espacio de acciones continuas entre 1000 y 1500
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         # Espacio de estados de dimensión 6
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(6,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32)
         # Frecuencia de acciones de 50Hz
         self.action_freq = 50
         # Time out de 200 time steps
@@ -111,10 +113,10 @@ class ControlEnv(gym.Env):
 
         self.counter = 0            # Numero de steps consecutivos dentro de la zona buena
 
-
+        self.max_angle_steps = 0
         ###Valores maximos de los parametros del vector de estado
-        self.max_theta = 30
-        self.max_aceleration = 20000/131
+        self.max_theta = 25
+        self.max_velocity = 150
 
 
         #Valores del vector de estados
@@ -122,12 +124,12 @@ class ControlEnv(gym.Env):
         #AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO
         ###################################################################################3
         self.theta_referencia = 0.0
-        self.theta_inicial = None
-        self.theta_aceleracion_inicial = None
+        self.theta_inicial = 0.0
+        self.theta_velocity_inicial = None
         self.current_step = 0
 
         # Estado actual
-        self.current_state = np.array([self.theta_inicial, self.theta_aceleracion_inicial, self.theta_referencia, self.current_step, self.last_action[0],self.last_action[1]], dtype=np.float32)
+        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, (self.theta_inicial - self.theta_referencia)**2], dtype=np.float32)
 
 
         self.last_action = None
@@ -137,6 +139,7 @@ class ControlEnv(gym.Env):
         self.arduino_port = arduino_port
         self.arduino_port.reset_input_buffer()
 
+        self.render_mode = None
         # Inicialización
         self.reset()
 
@@ -147,10 +150,13 @@ class ControlEnv(gym.Env):
 
         self.current_step = 0
         self.current_reward_steps = 0
+        self.max_angle_steps = 0
 
         self.last_action = np.array([-1,-1], dtype=np.float32)
+        self.filtered_action_past = self.last_action
 
         self.send_action(np.array([-1,-1], dtype=np.float32), self.arduino_port)
+        time.sleep(2)
         #Se deben reiniciar tambien los valores de estado iniciales
         self.arduino_values = self.get_observation(self.arduino_port)
         ##############################################################################
@@ -159,11 +165,11 @@ class ControlEnv(gym.Env):
         # Valores del vector de estados
         self.theta_referencia = 0.0
         self.theta_inicial = self.arduino_values[0] 
-        self.theta_aceleracion_inicial = self.arduino_values[1] 
+        self.theta_velocity_inicial = self.arduino_values[1] 
         self.current_step = 0
 
         self.previous_shaping = None
-        self.current_state = np.array([self.theta_inicial, self.theta_aceleracion_inicial, self.theta_referencia, self.current_step, self.last_action[0],self.last_action[1]], dtype=np.float32)
+        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, (self.theta_inicial - self.theta_referencia)**2], dtype=np.float32)
 
         # self.current_state = np.array(self.current_state, dtype=np.float32)
 
@@ -173,16 +179,19 @@ class ControlEnv(gym.Env):
         #####TAMBIEN HAY QUE PONER LOS MOTORES A 0 CUANDO SE ACABA EL EPISODIO, PERO SIN NECESIDAD DE APAGAR LA CORRIENTE
         ############################################################################################################
 
-        time.sleep(1)
-
+        
+        info = {}
         # Devolver el estado actual
-        return self.current_state
+        return self.current_state, info
 
 
 
     def step(self, action):
 
         ####### ENVIAR ACCCION TOMADA AL ARDUINO ########
+
+        # filtered_action = 0.8 * self.filtered_action_past + 0.2 * action
+
         self.send_action(action, self.arduino_port)
 
 
@@ -197,53 +206,88 @@ class ControlEnv(gym.Env):
         # AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO #
         ########################################################################################
 
-        new_state = np.array([new_arduino_data[0], new_arduino_data[1], self.theta_referencia, self.current_step, action[0], action[1]], dtype=np.float32)
+        new_state = np.array([new_arduino_data[0] , new_arduino_data[1], self.theta_referencia, (new_arduino_data[0] - self.theta_referencia)**2], dtype=np.float32)
 
         # ---------------------------- RECOMPENSAS -------------------------
 
-        reward = - abs(new_state[0] - new_state[2])
+        # reward = - abs(new_state[0] - new_state[2])
 
-        shaping = (
+        # reward = (
 
-                    -100 * abs(new_state[0] - new_state[2])
+        #             (abs(new_state[0] - new_state[2]))
 
-                    -10 * self.current_step
+        #             -(self.current_step / self.max_steps) * (abs(new_state[0] - new_state[2]) > (3/self.max_theta))
 
-                    + (10 - abs(new_state[0] - new_state[2])) * (abs(new_state[0] - new_state[2]) <= 1) 
+        #             + 2 * (abs(new_state[0] - new_state[2]) <= (3/self.max_theta)) 
 
-                )
+        #         )
         
-        if self.previous_shaping is not None:
+        # if self.previous_shaping is not None:
 
-            reward = shaping - self.previous_shaping
+        #     reward = shaping - self.previous_shaping
 
-        self.previous_shaping = shaping
+        # self.previous_shaping = shaping
+        # -------------------------------------------------------------------
+        # -------------------------------------------------------------------
+
+        reward = 0
+
+        if abs(new_state[0] - new_state[2]) <= (10):
+            reward = 1 - (abs(new_state[0] - new_state[2]) / self.max_theta)
+
+       # reward = 0.8 * reward - 0.1 * abs(action[0] - self.last_action[0]) - 0.1 * abs(action[1] - self.last_action[1])
+        
+        # if abs(new_state[1]) <= (80/self.max_velocity):
+        #     reward+=0.5
+
+
         # -------------------------------------------------------------------
 
         #Se guarda la ultima accion tomada para utilizarla en el reward
+        # self.filtered_action_past = filtered_action
         self.last_action = action
 
         # Actualizar el contador de reward steps si se alcanza el máximo reward
-        if abs(new_state[0] - new_state[2]) <= 1:
-            self.current_reward_steps += 1
+        # if abs(new_state[0] - new_state[2]) <= (3):
+        #     self.current_reward_steps += 1
+        # else:
+        #     self.current_reward_steps = 0
+
+               
+        if abs(new_state[0] - new_state[2]) >= (20):
+            self.max_angle_steps += 1
         else:
-            self.current_reward_steps = 0
+            self.max_angle_steps = 0
 
         # Comprobar si se ha alcanzado el time out o el early stopping
         if self.current_reward_steps == self.max_reward_steps:
-            reward+=100
-            done = True
+            # reward+=100
+            # done = True
+            pass
 
-        if self.current_step == self.max_steps:
+        # elif self.current_step == self.max_steps:
+            #reward-=1000
+            # done = True
+
+        elif self.max_angle_steps == 20:
             reward-=100
             done = True
+
+        else:
+            done = False
+
+        terminated = False
+        truncated = False
+
+        if done:
+            truncated = True
 
 
         # Actualizar el estado actual
         self.current_state = new_state
 
         # Devolver el nuevo estado, la recompensa, si el episodio ha terminado y un diccionario vacío de información adicional
-        return self.current_state, reward, done, {}
+        return self.current_state, reward, terminated,truncated, {}
 
 
 
@@ -325,4 +369,4 @@ class ControlEnv(gym.Env):
 
 
     def denormalize_action(self, action):
-        return ( (action + 1) * (300/2) ) + 1050
+        return ( (action + 1) * (300/2) ) + 1000
