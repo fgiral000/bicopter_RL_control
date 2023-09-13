@@ -99,7 +99,7 @@ if __name__ == "__main__":
     model = SAC.load("./tqc_model_test_VecEnv")
     model.set_env(env)
     model.set_parameters("./tqc_model_test_VecEnv")
-    mean_reward, std_reward = evaluate_policy(model, env, deterministic=True, n_eval_episodes=4)
+    mean_reward, std_reward = evaluate_policy(model, env, deterministic=True, n_eval_episodes=3)
 
     print(f"Mean reward = {mean_reward:.2f} +/- {std_reward:.2f}")
 

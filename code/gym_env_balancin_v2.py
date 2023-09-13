@@ -1,5 +1,7 @@
-import gym
-from gym import spaces
+# import gym
+# from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 #import tensorflow as tf
 import tensorboard
 import numpy as np
@@ -97,7 +99,7 @@ class ControlEnv(gym.Env):
         # Espacio de acciones continuas entre 1000 y 1500
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         # Espacio de estados de dimensión 6
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(5,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32)
         # Frecuencia de acciones de 50Hz
         self.action_freq = 50
         # Time out de 200 time steps
@@ -127,7 +129,7 @@ class ControlEnv(gym.Env):
         self.current_step = 0
 
         # Estado actual
-        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, (self.theta_inicial - self.theta_referencia)**2,self.current_step], dtype=np.float32)
+        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, (self.theta_inicial - self.theta_referencia)**2], dtype=np.float32)
 
 
         self.last_action = None
@@ -137,6 +139,7 @@ class ControlEnv(gym.Env):
         self.arduino_port = arduino_port
         self.arduino_port.reset_input_buffer()
 
+        self.render_mode = None
         # Inicialización
         self.reset()
 
@@ -166,7 +169,7 @@ class ControlEnv(gym.Env):
         self.current_step = 0
 
         self.previous_shaping = None
-        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, (self.theta_inicial - self.theta_referencia)**2, self.current_step], dtype=np.float32)
+        self.current_state = np.array([self.theta_inicial, self.theta_velocity_inicial, self.theta_referencia, (self.theta_inicial - self.theta_referencia)**2], dtype=np.float32)
 
         # self.current_state = np.array(self.current_state, dtype=np.float32)
 
@@ -177,9 +180,9 @@ class ControlEnv(gym.Env):
         ############################################################################################################
 
         
-
+        info = {}
         # Devolver el estado actual
-        return self.current_state
+        return self.current_state, info
 
 
 
@@ -203,7 +206,7 @@ class ControlEnv(gym.Env):
         # AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO #
         ########################################################################################
 
-        new_state = np.array([new_arduino_data[0] , new_arduino_data[1], self.theta_referencia, (new_arduino_data[0] - self.theta_referencia)**2,self.current_step], dtype=np.float32)
+        new_state = np.array([new_arduino_data[0] , new_arduino_data[1], self.theta_referencia, (new_arduino_data[0] - self.theta_referencia)**2], dtype=np.float32)
 
         # ---------------------------- RECOMPENSAS -------------------------
 
@@ -262,9 +265,9 @@ class ControlEnv(gym.Env):
             # done = True
             pass
 
-        elif self.current_step == self.max_steps:
+        # elif self.current_step == self.max_steps:
             #reward-=1000
-            done = True
+            # done = True
 
         elif self.max_angle_steps == 20:
             reward-=100
@@ -273,12 +276,18 @@ class ControlEnv(gym.Env):
         else:
             done = False
 
+        terminated = False
+        truncated = False
+
+        if done:
+            truncated = True
+
 
         # Actualizar el estado actual
         self.current_state = new_state
 
         # Devolver el nuevo estado, la recompensa, si el episodio ha terminado y un diccionario vacío de información adicional
-        return self.current_state, reward, done, {}
+        return self.current_state, reward, terminated,truncated, {}
 
 
 

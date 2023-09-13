@@ -2,9 +2,9 @@ import serial
 import time
 import logging
 # import yaml
-from gym.wrappers import FrameStack, NormalizeReward, NormalizeObservation, TimeLimit
+from gymnasium.wrappers import TimeLimit
 from wrappers_from_rlzoo import ActionSmoothingWrapper, HistoryWrapper
-import gym
+import gymnasium as gym
 import stable_baselines3
 #import tensorflow as tf
 import tensorboard
@@ -66,20 +66,20 @@ if __name__ == "__main__":
     #Se establece el entorno de entrenamiento
     env = ControlEnv(arduino_port)
     env = Monitor(env)
-    # env = TimeLimit(env, max_episode_steps=500)
+    env = TimeLimit(env, max_episode_steps=500)
     env = ActionSmoothingWrapper(env, smoothing_coef=0.6)
     env = HistoryWrapper(env=env)
     
     #VecNormalize wrappers
     env = DummyVecEnv([lambda: env])
-    env = VecNormalize(env,
-                       training=True,
-                       norm_obs=True,
-                       norm_reward=True,
-                       clip_obs=10)
+    # env = VecNormalize(env,
+    #                    training=True,
+    #                    norm_obs=True,
+    #                    norm_reward=True,
+    #                    clip_obs=10)
     
     
-
+    env = VecNormalize.load("./vec_normalize.pkl", venv=env)
 
 
 
@@ -137,16 +137,21 @@ if __name__ == "__main__":
                 seed = 68,
                 )
     
-    # sac = SAC.load("sac_model_trained_from_pretrained_50k.zip", env=env)
+    # sac = SAC.load("sac_model_trained_from_pretrained_50k.zip", env=env, )
+    #####Un-comment when you want to train from a pre-trained model
+    # sac = TQC.load("tqc_model_test_VecEnv", custom_objects={"verbose":2, "learning_starts":0}, env=env)
+    # # tqc_model = TQC.load("first_donkey_mountain_tqc_415k.zip")
+    # sac.load_replay_buffer("replay_buffer_tqc_training_VecEnv.pkl")
+    # sac.set_env(env=env)
 
     TIME_STEPS = 30_000
     CALLBACKS = [r_callback, parallel_callback]
     
-    sac.learn(total_timesteps = TIME_STEPS, callback = CALLBACKS, tb_log_name="tqc_state_space_VecEnv")
+    sac.learn(total_timesteps = TIME_STEPS, callback = CALLBACKS, tb_log_name="tqc_state_space_VecEnv-2")
 
-    sac.save(path="tqc_model_test_VecEnv")
-    sac.save_replay_buffer("replay_buffer_tqc_training_VecEnv")
-    env.save("vec_normalize.pkl")
+    sac.save(path="tqc_model_test_VecEnv_2")
+    sac.save_replay_buffer("replay_buffer_tqc_training_VecEnv_2")
+    env.save("vec_normalize_2.pkl")
 
     #Se finaliza todo el setup del arduino
     # env.reset()
