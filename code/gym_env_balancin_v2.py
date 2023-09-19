@@ -95,7 +95,7 @@ class TensorboardCallback(BaseCallback):
 class ControlEnv(gym.Env):
 
     def __init__(self, arduino_port):
-        super(ControlEnv, self).__init__()
+        super().__init__()
         # Espacio de acciones continuas entre 1000 y 1500
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         # Espacio de estados de dimensión 6
@@ -145,9 +145,11 @@ class ControlEnv(gym.Env):
 
 
 
-    def reset(self,seed=42):
+    def reset(self, seed=None, options=None):
+         # We need the following line to seed self.np_random
+        super().reset(seed=seed)
         # Reiniciar el estado y el contador de time steps y reward steps
-
+        # self.seed = seed
         self.current_step = 0
         self.current_reward_steps = 0
         self.max_angle_steps = 0

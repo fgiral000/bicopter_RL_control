@@ -2,9 +2,9 @@ import serial
 import time
 import logging
 # import yaml
-from gym.wrappers import FrameStack, NormalizeReward, NormalizeObservation, TimeLimit
+from gymnasium.wrappers import TimeLimit
 from wrappers_from_rlzoo import ActionSmoothingWrapper, HistoryWrapper
-import gym
+import gymnasium as gym
 import stable_baselines3
 #import tensorflow as tf
 import tensorboard
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     #############################################################################################################################
     ############################# AGENTE #######################################################################################
     
-    model = SAC.load("./tqc_model_test_VecEnv")
+    model = TQC.load("./tqc_model_test_VecEnv")
     model.set_env(env)
     model.set_parameters("./tqc_model_test_VecEnv")
     mean_reward, std_reward = evaluate_policy(model, env, deterministic=True, n_eval_episodes=3)

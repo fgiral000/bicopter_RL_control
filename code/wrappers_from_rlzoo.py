@@ -1,5 +1,5 @@
 from typing import Any, Dict, Optional, SupportsFloat, Tuple
-import gym
+import gymnasium as gym
 import numpy as np
 
 
@@ -42,16 +42,16 @@ class HistoryWrapper(gym.Wrapper):
     def _create_obs_from_history(self):
         return np.concatenate((self.obs_history, self.action_history))
 
-    def reset(self):
+    def reset(self, seed=None, options = None):
         # Flush the history
         self.obs_history[...] = 0
         self.action_history[...] = 0
-        obs = self.env.reset()
+        obs, info = self.env.reset()
         self.obs_history[..., -obs.shape[-1] :] = obs
-        return self._create_obs_from_history()
+        return self._create_obs_from_history(), info
 
     def step(self, action):
-        obs, reward, done, info = self.env.step(action)
+        obs, reward, terminated,truncated, info = self.env.step(action)
         last_ax_size = obs.shape[-1]
 
         self.obs_history = np.roll(self.obs_history, shift=-last_ax_size, axis=-1)
@@ -59,7 +59,8 @@ class HistoryWrapper(gym.Wrapper):
 
         self.action_history = np.roll(self.action_history, shift=-action.shape[-1], axis=-1)
         self.action_history[..., -action.shape[-1] :] = action
-        return self._create_obs_from_history(), reward, done, info
+
+        return self._create_obs_from_history(), reward, terminated, truncated, info
 
 
 class ActionSmoothingWrapper(gym.Wrapper):

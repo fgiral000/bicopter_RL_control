@@ -70,7 +70,7 @@ if __name__ == "__main__":
     env = ActionSmoothingWrapper(env, smoothing_coef=0.6)
     env = HistoryWrapper(env=env)
     
-    #VecNormalize wrappers
+    # # #VecNormalize wrappers
     env = DummyVecEnv([lambda: env])
     # env = VecNormalize(env,
     #                    training=True,
@@ -117,34 +117,34 @@ if __name__ == "__main__":
     # policy_kw = dict(activation_fn = torch.nn.Tanh, net_arch = net_arch, n_quantiles = 20, log_std_init = -1)
     policy_kw = dict(activation_fn = torch.nn.Tanh, net_arch = net_arch)
     
-    sac = TQC('MlpPolicy',
-                env=env,
-                learning_rate=3e-4,
-                buffer_size=10000,
-                batch_size=256,
-                ent_coef='auto',
-                gamma=0.99,
-                tau=0.02,
-                train_freq=128,
-                gradient_steps=128,
-                learning_starts=500,
-                use_sde_at_warmup=False,
-                use_sde=True,
-                sde_sample_freq=64,
-                policy_kwargs=dict(log_std_init=-3, net_arch=[64,64], n_critics = 2),
-                tensorboard_log="tqc_testing_1",
-                verbose = 2,
-                seed = 68,
-                )
+    # sac = TQC('MlpPolicy',
+    #             env=env,
+    #             learning_rate=3e-4,
+    #             buffer_size=10000,
+    #             batch_size=256,
+    #             ent_coef='auto',
+    #             gamma=0.99,
+    #             tau=0.02,
+    #             train_freq=128,
+    #             gradient_steps=128,
+    #             learning_starts=500,
+    #             use_sde_at_warmup=False,
+    #             use_sde=True,
+    #             sde_sample_freq=64,
+    #             policy_kwargs=dict(log_std_init=-3, net_arch=[64,64], n_critics = 2),
+    #             tensorboard_log="tqc_testing_1",
+    #             verbose = 2,
+    #             seed = 68,
+    #             )
     
     # sac = SAC.load("sac_model_trained_from_pretrained_50k.zip", env=env, )
     #####Un-comment when you want to train from a pre-trained model
-    # sac = TQC.load("tqc_model_test_VecEnv", custom_objects={"verbose":2, "learning_starts":0}, env=env)
-    # # tqc_model = TQC.load("first_donkey_mountain_tqc_415k.zip")
-    # sac.load_replay_buffer("replay_buffer_tqc_training_VecEnv.pkl")
-    # sac.set_env(env=env)
+    sac = TQC.load("tqc_model_test_VecEnv_2", custom_objects={"verbose":2, "learning_starts":0}, env=env)
+    # tqc_model = TQC.load("first_donkey_mountain_tqc_415k.zip")
+    sac.load_replay_buffer("replay_buffer_tqc_training_VecEnv_2.pkl")
+    sac.set_env(env=env)
 
-    TIME_STEPS = 30_000
+    TIME_STEPS = 40_000
     CALLBACKS = [r_callback, parallel_callback]
     
     sac.learn(total_timesteps = TIME_STEPS, callback = CALLBACKS, tb_log_name="tqc_state_space_VecEnv-2")
