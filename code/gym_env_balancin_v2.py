@@ -165,7 +165,13 @@ class ControlEnv(gym.Env):
         #AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO
         ###################################################################################3
         # Valores del vector de estados
-        self.theta_referencia = 0.0
+        self.state_reference_options = [-10.0,0.0,10.0]
+        # if theta_reference:
+        #     self.theta_referencia = theta_reference
+        # else:
+        #     self.theta_referencia = np.random.choice(self.state_reference_options)
+        self.theta_referencia = -10.0
+        
         self.theta_inicial = self.arduino_values[0] 
         self.theta_velocity_inicial = self.arduino_values[1] 
         self.current_step = 0
@@ -235,7 +241,7 @@ class ControlEnv(gym.Env):
         reward = 0
 
         if abs(new_state[0] - new_state[2]) <= (10):
-            reward = 1 - (abs(new_state[0] - new_state[2]) / self.max_theta)
+            reward = 1 - (abs(new_state[0] - new_state[2]) / (self.max_theta + new_state[2]))
 
        # reward = 0.8 * reward - 0.1 * abs(action[0] - self.last_action[0]) - 0.1 * abs(action[1] - self.last_action[1])
         
