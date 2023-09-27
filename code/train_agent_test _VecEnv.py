@@ -72,14 +72,14 @@ if __name__ == "__main__":
     
     # # #VecNormalize wrappers
     env = DummyVecEnv([lambda: env])
-    # env = VecNormalize(env,
-    #                    training=True,
-    #                    norm_obs=True,
-    #                    norm_reward=True,
-    #                    clip_obs=10)
+    env = VecNormalize(env,
+                       training=True,
+                       norm_obs=True,
+                       norm_reward=True,
+                       clip_obs=10)
     
     
-    env = VecNormalize.load("./vec_normalize.pkl", venv=env)
+    # env = VecNormalize.load("./vec_normalize.pkl", venv=env)
 
 
 
@@ -147,11 +147,11 @@ if __name__ == "__main__":
     TIME_STEPS = 40_000
     CALLBACKS = [r_callback, parallel_callback]
     
-    sac.learn(total_timesteps = TIME_STEPS, callback = CALLBACKS, tb_log_name="tqc_3targets")
+    sac.learn(total_timesteps = TIME_STEPS, callback = CALLBACKS, tb_log_name="tqc_1targets")
 
-    sac.save(path="tqc_model_3targets")
-    sac.save_replay_buffer("replay_buffer_tqc_training_3targets")
-    env.save("vec_normalize_3targets.pkl")
+    sac.save(path="tqc_model_1targets")
+    sac.save_replay_buffer("replay_buffer_tqc_training_1targets")
+    env.save("vec_normalize_1targets.pkl")
 
     #Se finaliza todo el setup del arduino
     # env.reset()

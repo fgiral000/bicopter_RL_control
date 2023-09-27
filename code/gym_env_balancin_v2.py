@@ -49,7 +49,8 @@ class TensorboardCallback(BaseCallback):
 
         # theta_dot_denorm = theta_dot*self.max_velocity
         # self.logger.record("state_space/theta_dot_denorm", theta_dot_denorm)
-
+        theta_reference = state_space[2]
+        self.logger.record("state_space/theta_reference", theta_reference)
 
         # Espacio de acciones
 
@@ -59,14 +60,14 @@ class TensorboardCallback(BaseCallback):
         Ti = actions[0]
         self.logger.record("action_space/Left_Thrust", Ti)
 
-        Ti_denorm = actions_denorm[0]
-        self.logger.record("action_space/Left_Thrust_Denorm", Ti_denorm)
+        # Ti_denorm = actions_denorm[0]
+        # self.logger.record("action_space/Left_Thrust_Denorm", Ti_denorm)
 
         Td = actions[1]
         self.logger.record("action_space/Right_Thrust", Td)
 
-        Td_denorm = actions_denorm[1]
-        self.logger.record("action_space/Right_Thrust_Denorm", Td_denorm)
+        # Td_denorm = actions_denorm[1]
+        # self.logger.record("action_space/Right_Thrust_Denorm", Td_denorm)
 
         # Rewards
         # self.total_reward = self.primary_reward + self.time_reward + self.goal_reward + self.timeout_reward
@@ -115,7 +116,7 @@ class ControlEnv(gym.Env):
 
         self.max_angle_steps = 0
         ###Valores maximos de los parametros del vector de estado
-        self.max_theta = 25
+        self.max_theta = 46
         self.max_velocity = 150
 
 
@@ -165,12 +166,12 @@ class ControlEnv(gym.Env):
         #AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO
         ###################################################################################3
         # Valores del vector de estados
-        self.state_reference_options = [-10.0,0.0,10.0]
+        self.state_reference_options = [-20.0,0.0,20.0]
         # if theta_reference:
         #     self.theta_referencia = theta_reference
         # else:
-        #     self.theta_referencia = np.random.choice(self.state_reference_options)
-        self.theta_referencia = -10.0
+        # self.theta_referencia = np.random.choice(self.state_reference_options)
+        self.theta_referencia = 0.0
         
         self.theta_inicial = self.arduino_values[0] 
         self.theta_velocity_inicial = self.arduino_values[1] 
@@ -262,7 +263,7 @@ class ControlEnv(gym.Env):
         #     self.current_reward_steps = 0
 
                
-        if abs(new_state[0] - new_state[2]) >= (20):
+        if abs(new_state[0] - new_state[2]) >= (40):
             self.max_angle_steps += 1
         else:
             self.max_angle_steps = 0

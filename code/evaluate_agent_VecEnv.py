@@ -72,7 +72,7 @@ if __name__ == "__main__":
     
     #VecNormalize wrappers
     env = DummyVecEnv([lambda: env])
-    env = VecNormalize.load(load_path="./vec_normalize_3targets.pkl", venv=env)
+    env = VecNormalize.load(load_path="./vec_normalize_1targets.pkl", venv=env)
     env.training = False
     env.norm_reward = False
     
@@ -96,9 +96,9 @@ if __name__ == "__main__":
     #############################################################################################################################
     ############################# AGENTE #######################################################################################
     
-    model = TQC.load("./tqc_model_3targets")
+    model = TQC.load("./tqc_model_1targets")
     model.set_env(env)
-    model.set_parameters("./tqc_model_3targets")
+    model.set_parameters("./tqc_model_1targets")
     mean_reward, std_reward = evaluate_policy(model, env, deterministic=True, n_eval_episodes=3)
 
     print(f"Mean reward = {mean_reward:.2f} +/- {std_reward:.2f}")
