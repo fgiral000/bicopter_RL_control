@@ -54,7 +54,7 @@ class ParallelTrainCallback(BaseCallback):
         self.model.save(temp_file)
 
         if self.model.get_vec_normalize_env() is not None:
-            temp_file_norm = os.path.join("logs", "vec_normalize.pkl")
+            temp_file_norm = os.path.join("../logs", "vec_normalize.pkl")
 
             with open(temp_file_norm, "wb") as file_handler:
                 pickle.dump(self.model.get_vec_normalize_env(), file_handler)

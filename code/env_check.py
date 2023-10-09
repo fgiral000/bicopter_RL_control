@@ -1,4 +1,4 @@
-from gym_env_balancin_v2 import ControlEnv
+from code.gym_env_balancin_v2 import ControlEnv
 import gymnasium as gym
 from stable_baselines3.common.env_checker import check_env
 import time

@@ -1,10 +1,10 @@
 import d3rlpy
 import gym 
-from gym_env_balancin_v2 import ControlEnv
+from code.gym_env_balancin_v2 import ControlEnv
 import serial
 import logging
 import time
-from gym.wrappers import NormalizeObservation, NormalizeReward
+from gymnasium.wrappers import NormalizeObservation, NormalizeReward
 
 def setup_arduino():
     """Funcion para hacer el septup del arduino"""

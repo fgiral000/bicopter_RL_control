@@ -1,0 +1,12 @@
+*.py[cod]
+
+*.pyc
+
+__pycache__/
+
+code/__pycache__
+
+TQC_algo/
+logs/
+sac_testing_v0/
+*.h5

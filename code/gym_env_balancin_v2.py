@@ -166,7 +166,7 @@ class ControlEnv(gym.Env):
         #AQUI SE DEBEN INTRODUCIR LOS VALORES LEIDOS DEL ARDUINO ANTES DE EMPEZAR EL EPISODIO
         ###################################################################################3
         # Valores del vector de estados
-        self.state_reference_options = [-20.0,0.0,20.0]
+        # self.state_reference_options = [-25.0,0.0,25.0]
         # if theta_reference:
         #     self.theta_referencia = theta_reference
         # else:
@@ -263,7 +263,7 @@ class ControlEnv(gym.Env):
         #     self.current_reward_steps = 0
 
                
-        if abs(new_state[0] - new_state[2]) >= (40):
+        if abs(new_state[0] - new_state[2]) >= (20.0):
             self.max_angle_steps += 1
         else:
             self.max_angle_steps = 0

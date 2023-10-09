@@ -1,6 +1,6 @@
 import d3rlpy
 import gym 
-from gym_env_balancin_v2 import ControlEnv
+from code.gym_env_balancin_v2 import ControlEnv
 import serial
 import logging
 import time

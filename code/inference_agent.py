@@ -3,11 +3,11 @@ import serial
 import time
 import logging
 from gymnasium.wrappers import TimeLimit
-from wrappers_from_rlzoo import ActionSmoothingWrapper, HistoryWrapper
+from code.wrappers_from_rlzoo import ActionSmoothingWrapper, HistoryWrapper
 import gymnasium as gym
 import stable_baselines3
-from gym_env_balancin_v2 import ControlEnv
-from callbacks_from_rlzoo import ParallelTrainCallback
+from code.gym_env_balancin_v2 import ControlEnv
+from code.callbacks_from_rlzoo import ParallelTrainCallback
 from stable_baselines3 import SAC
 from sb3_contrib import TQC
 import torch

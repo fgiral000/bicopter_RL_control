@@ -96,7 +96,7 @@ def get_data():
 
 
 if __name__ == "__main__":
-    arduino = serial.Serial('COM5', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
+    arduino = serial.Serial('/dev/ttyACM0', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
     print("Correctamente conectado")
 
     input("Presiona la tecla enter cuando este preparado",)

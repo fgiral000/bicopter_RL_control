@@ -20,7 +20,7 @@ from sb3_contrib import TQC
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import VecEnv
-from gym_env_balancin_v2 import ControlEnv, TensorboardCallback
+from code.gym_env_balancin_v2 import ControlEnv, TensorboardCallback
 import time
 import logging
 import optuna
