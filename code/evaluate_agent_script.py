@@ -9,8 +9,8 @@ import stable_baselines3
 #import tensorflow as tf
 import tensorboard
 # import yaml
-from code.gym_env_balancin_v2 import ControlEnv
-from code.gym_env_balancin_v2 import TensorboardCallback
+from gym_env_balancin_v2 import ControlEnv
+from gym_env_balancin_v2 import TensorboardCallback
 from callbacks_from_rlzoo import ParallelTrainCallback
 from stable_baselines3 import SAC
 from sb3_contrib import TQC
@@ -25,7 +25,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 def setup_arduino():
     """Funcion para hacer el septup del arduino"""
-    arduino = serial.Serial('COM5', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
+    arduino = serial.Serial('/dev/ttyACM0', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
     print("Correctamente conectado")
 
     time.sleep(3)
@@ -60,7 +60,9 @@ if __name__ == "__main__":
     input("Presiona la tecla enter cuando todo este preparado",)
 
 
-
+    MODEL_NAME_NEW = "../tqc_model_3targets"
+    MODEL_BUFFER_NEW = "../replay_buffer_tqc_training_3targets.pkl"
+    VEC_ENV_NEW = "../vec_normalize_3targets.pkl"
 
 
     #Se establece el entorno de entrenamiento
@@ -72,7 +74,7 @@ if __name__ == "__main__":
     
     #VecNormalize wrappers
     env = DummyVecEnv([lambda: env])
-    env = VecNormalize.load(load_path="./vec_normalize_1targets.pkl", venv=env)
+    env = VecNormalize.load(load_path=VEC_ENV_NEW, venv=env)
     env.training = False
     env.norm_reward = False
     
@@ -96,9 +98,9 @@ if __name__ == "__main__":
     #############################################################################################################################
     ############################# AGENTE #######################################################################################
     
-    model = TQC.load("./tqc_model_1targets")
+    model = TQC.load(MODEL_NAME_NEW)
     model.set_env(env)
-    model.set_parameters("./tqc_model_1targets")
+    model.set_parameters(MODEL_NAME_NEW)
     mean_reward, std_reward = evaluate_policy(model, env, deterministic=True, n_eval_episodes=3)
 
     print(f"Mean reward = {mean_reward:.2f} +/- {std_reward:.2f}")

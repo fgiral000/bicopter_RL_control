@@ -47,17 +47,17 @@ if __name__ == "__main__":
     ############################# ENVIRONMENT #######################################################################################
 
     #Names of files of departure
-    # MODEL_NAME_LOAD_FROM = "../tqc_model_1targets"
-    # MODEL_BUFFER_LOAD_FROM = "../replay_buffer_tqc_training_1targets.pkl"
-    # VEC_ENV_LOAD_FROM = "../vec_normalize_1targets.pkl"
+    MODEL_NAME_LOAD_FROM = "../tqc_model_3targets"
+    MODEL_BUFFER_LOAD_FROM = "../replay_buffer_tqc_training_3targets.pkl"
+    VEC_ENV_LOAD_FROM = "../vec_normalize_3targets.pkl"
 
-    # MODEL_NAME_NEW = "../tqc_model_3targets"
-    # MODEL_BUFFER_NEW = "../replay_buffer_tqc_training_3targets.pkl"
-    # VEC_ENV_NEW = "../vec_normalize_3targets.pkl"
+    MODEL_NAME_NEW = "../tqc_model_3targets_nostop"
+    MODEL_BUFFER_NEW = "../replay_buffer_tqc_training_3targets_nostop.pkl"
+    VEC_ENV_NEW = "../vec_normalize_3targets_nostop.pkl"
 
-    MODEL_NAME_NEW = "../tqc_model_1targets"
-    MODEL_BUFFER_NEW = "../replay_buffer_tqc_training_1targets.pkl"
-    VEC_ENV_NEW = "../vec_normalize_1targets.pkl"
+    # MODEL_NAME_NEW = "../tqc_model_1targets"
+    # MODEL_BUFFER_NEW = "../replay_buffer_tqc_training_1targets.pkl"
+    # VEC_ENV_NEW = "../vec_normalize_1targets.pkl"
 
 
     #Se inicializa el entorno del arduino
@@ -84,16 +84,16 @@ if __name__ == "__main__":
     
     # # #VecNormalize wrappers
     env = DummyVecEnv([lambda: env])
-    env = VecNormalize(env,
-                       training=True,
-                       norm_obs=True,
-                       norm_reward=True,
-                       clip_obs=10)
+    # env = VecNormalize(env,
+    #                    training=True,
+    #                    norm_obs=True,
+    #                    norm_reward=True,
+    #                    clip_obs=10)
     
     
-    # env = VecNormalize.load(VEC_ENV_LOAD_FROM, 
-    #                         venv=env)
-    # env.training = True
+    env = VecNormalize.load(VEC_ENV_LOAD_FROM, 
+                            venv=env)
+    env.training = True
 
 
 
@@ -131,37 +131,36 @@ if __name__ == "__main__":
     # policy_kw = dict(activation_fn = torch.nn.Tanh, net_arch = net_arch, n_quantiles = 20, log_std_init = -1)
     policy_kw = dict(activation_fn = torch.nn.Tanh, net_arch = net_arch)
     
-    sac = TQC('MlpPolicy',
-                env=env,
-                learning_rate=3e-4,
-                buffer_size=10000,
-                batch_size=256,
-                ent_coef='auto',
-                gamma=0.99,
-                tau=0.02,
-                train_freq=128,
-                gradient_steps=128,
-                learning_starts=500,
-                use_sde_at_warmup=False,
-                use_sde=True,
-                sde_sample_freq=64,
-                policy_kwargs=dict(log_std_init=-3, net_arch=[64,64], n_critics = 2),
-                tensorboard_log="../TQC_algo",
-                verbose = 2,
-                seed = 68,
-                )
+    # sac = TQC('MlpPolicy',
+    #             env=env,
+    #             learning_rate=3e-4,
+    #             buffer_size=10000,
+    #             batch_size=256,
+    #             ent_coef='auto',
+    #             gamma=0.99,
+    #             tau=0.02,
+    #             train_freq=128,
+    #             gradient_steps=128,
+    #             learning_starts=500,
+    #             use_sde_at_warmup=False,
+    #             use_sde=True,
+    #             sde_sample_freq=64,
+    #             policy_kwargs=dict(log_std_init=-3, net_arch=[64,64], n_critics = 2),
+    #             tensorboard_log="../TQC_algo",
+    #             verbose = 2,
+    #             seed = 68,
+    #             )
     
     # sac = SAC.load("sac_model_trained_from_pretrained_50k.zip", env=env, )
     #####Un-comment when you want to train from a pre-trained model
-    # sac = TQC.load(MODEL_NAME_LOAD_FROM, custom_objects={"verbose":2, "learning_starts":0, "tensorboard_log":"../TQC_algo"}, env=env)
-    # # tqc_model = TQC.load("first_donkey_mountain_tqc_415k.zip")
-    # sac.load_replay_buffer(MODEL_BUFFER_LOAD_FROM)
-    # sac.set_env(env=env)
+    sac = TQC.load(MODEL_NAME_LOAD_FROM, custom_objects={"verbose":2, "learning_starts":0, "tensorboard_log":"../TQC_algo"}, env=env)
+    sac.load_replay_buffer(MODEL_BUFFER_LOAD_FROM)
+    sac.set_env(env=env)
 
-    TIME_STEPS = 70_000
+    TIME_STEPS = 30_000
     CALLBACKS = [r_callback, parallel_callback]
     
-    sac.learn(total_timesteps = TIME_STEPS, callback = CALLBACKS, tb_log_name="tqc_1targets")
+    sac.learn(total_timesteps = TIME_STEPS, callback = CALLBACKS, tb_log_name="tqc_3targets")
 
     sac.save(path=MODEL_NAME_NEW)
     sac.save_replay_buffer(MODEL_BUFFER_NEW)

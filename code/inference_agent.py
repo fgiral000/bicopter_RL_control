@@ -3,14 +3,15 @@ import serial
 import time
 import logging
 from gymnasium.wrappers import TimeLimit
-from code.wrappers_from_rlzoo import ActionSmoothingWrapper, HistoryWrapper
+from wrappers_from_rlzoo import ActionSmoothingWrapper, HistoryWrapper
 import gymnasium as gym
 import stable_baselines3
-from code.gym_env_balancin_v2 import ControlEnv
-from code.callbacks_from_rlzoo import ParallelTrainCallback
+from gym_env_balancin_v2 import ControlEnv
+from callbacks_from_rlzoo import ParallelTrainCallback
 from stable_baselines3 import SAC
 from sb3_contrib import TQC
 import torch
+import numpy as np
 
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
@@ -18,7 +19,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 def setup_arduino():
     """Funcion para hacer el septup del arduino"""
-    arduino = serial.Serial('COM5', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
+    arduino = serial.Serial('/dev/ttyACM0', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
     print("Correctamente conectado")
 
     time.sleep(3)
@@ -31,6 +32,9 @@ def setup_arduino():
 if __name__ == "__main__":
 
     #Load the environment
+    MODEL_NAME_NEW = "../tqc_model_3targets_nostop"
+    MODEL_BUFFER_NEW = "../replay_buffer_tqc_training_3targets_nostop.pkl"
+    VEC_ENV_NEW = "../vec_normalize_3targets_nostop.pkl"
 
     #############################################################################################################################
     #############################################################################################################################
@@ -53,7 +57,7 @@ if __name__ == "__main__":
     env = HistoryWrapper(env=env)
     #VecNormalize wrappers
     env = DummyVecEnv([lambda: env])
-    env = VecNormalize.load(load_path="./vec_normalize_3targets.pkl", venv=env)
+    env = VecNormalize.load(load_path=VEC_ENV_NEW, venv=env)
     env.training = False
     env.norm_reward = False
     logging.info("Estableciendo entorno de entrenamiento")
@@ -64,38 +68,59 @@ if __name__ == "__main__":
 
 
     #Load the pre-trained agent
-    model = TQC.load("./tqc_model_3targets")
+    model = TQC.load(MODEL_NAME_NEW)
     model.set_env(env)
-    model.set_parameters("./tqc_model_3targets")
+    model.set_parameters(MODEL_NAME_NEW)
 
 
+    # env.get_original_obs()
+    
 
     #Using stable-baselines3 to use the pre-trained policy in inference
     
-    reference_theta = [-10.0,0.0,10.0]          #possibles angles of reference to give to the agent
+    
+    observation = env.reset()
+    # unnorm_observation = env.get_original_obs()
+    # # print(unnorm_observation)
+    # # unnorm_observation = env.unnormalize_obs(observation)
+    # # # print(unnorm_observation)
+    current_step = 0
+    
+    # unnorm_observation[0][18] = rt
+    # print("Observation after reset:")
+    # print(unnorm_observation)
+    # observation = env.normalize_obs(unnorm_observation)
+    logging.info("The current reference angle is:",)
+    # print(rt)
+    
+    while True:
 
-    for rt in reference_theta:
-        observation = env.reset()
-        # unnorm_observation = env.unnormalize_obs(observation)
-        # # print(unnorm_observation)
-        # unnorm_observation[0][-4] = 0.0
-        # observation = env.normalize_obs(unnorm_observation)
-        logging.info("The current reference angle is:",)
-        # print(rt)
-        
-        for _ in range(500):
+        try:
+            current_step +=1
+            action, _ = model.predict(observation, deterministic=True)
+            observation, rewards, done, info = env.step(action)
+            # denorm_observation = env.unnormalize_obs(observation)
+            # unnorm_observation = env.get_original_obs()
+            # print("Normalized observation")
+            # print(observation)
+            # print("Original observation")
+            # print(unnorm_observation)
+            # # print("Denorm obervation")
+            # # print(denorm_observation)
+            # # print(unnorm_observation[0][-4])
+            # unnorm_observation[0][18] = rt
+            # observation = env.normalize_obs(unnorm_observation)
+            # print(f"Current angle: {observation[0][-6]}, Error track: {abs(observation[0][-6]-observation[0][-4])}")
+            if current_step >= 100:
+                new_theta_value = np.random.choice([-25.0,0.0,25.0])         #possibles angles of reference to give to the agent
+                env.set_attr("theta_referencia", new_theta_value)
+                print("The new theta reference is:", new_theta_value)
+                current_step = 0
 
-            try:
-                action, _ = model.predict(observation, deterministic=True)
-                observation, rewards, done, info = env.step(action)
-                # unnorm_observation = env.unnormalize_obs(observation)
-                # print(unnorm_observation[0][-4])
-                # print(f"Current angle: {observation[0][-6]}, Error track: {abs(observation[0][-6]-observation[0][-4])}")
-
-            except KeyboardInterrupt:
-                print("The process has been finalized by keyboard command")
-                #Arduino setup and serial port are closed
-                arduino_port.close()
+        except KeyboardInterrupt:
+            print("The process has been finalized by keyboard command")
+            #Arduino setup and serial port are closed
+            arduino_port.close()
 
 
 

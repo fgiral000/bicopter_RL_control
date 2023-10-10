@@ -116,7 +116,7 @@ class ControlEnv(gym.Env):
 
         self.max_angle_steps = 0
         ###Valores maximos de los parametros del vector de estado
-        self.max_theta = 46
+        self.max_theta = 50
         self.max_velocity = 150
 
 
@@ -167,9 +167,9 @@ class ControlEnv(gym.Env):
         ###################################################################################3
         # Valores del vector de estados
         # self.state_reference_options = [-25.0,0.0,25.0]
-        # if theta_reference:
-        #     self.theta_referencia = theta_reference
-        # else:
+        # # if theta_reference:
+        # #     self.theta_referencia = theta_reference
+        # # else:
         # self.theta_referencia = np.random.choice(self.state_reference_options)
         self.theta_referencia = 0.0
         
@@ -206,6 +206,11 @@ class ControlEnv(gym.Env):
 
         # Incrementar el contador de time steps
         self.current_step += 1
+
+        # if self.current_step >= 100:
+        #     self.theta_referencia = np.random.choice(self.state_reference_options)
+        #     self.current_step = 0
+
 
 
         # Calcular el nuevo estado a partir de la acción y el estado actual
