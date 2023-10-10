@@ -22,12 +22,6 @@ class TensorboardCallback(BaseCallback):
 
     def _on_step(self) -> bool:
 
-        # Sacar los datos del env
-        # self.primary_reward = self.training_env.get_attr('reward_1')[0]
-        # self.time_reward = self.training_env.get_attr('reward_2')[0]
-        # self.goal_reward = self.training_env.get_attr('reward_3')[0]
-        # self.timeout_reward = self.training_env.get_attr('reward_4')[0]
-
         self.space_state = self.training_env.get_attr('current_state')[0]
         self.action = self.training_env.get_attr('last_action')[0]
         self.max_theta = self.training_env.get_attr('max_theta')[0]
@@ -39,10 +33,6 @@ class TensorboardCallback(BaseCallback):
 
         theta = state_space[0]
         self.logger.record("state_space/theta", theta)
-
-        # theta_denorm = theta*self.max_theta
-        # self.logger.record("state_space/theta_denorm", theta_denorm)
-
 
         theta_dot = state_space[1]
         self.logger.record("state_space/theta_dot", theta_dot)
@@ -60,28 +50,9 @@ class TensorboardCallback(BaseCallback):
         Ti = actions[0]
         self.logger.record("action_space/Left_Thrust", Ti)
 
-        # Ti_denorm = actions_denorm[0]
-        # self.logger.record("action_space/Left_Thrust_Denorm", Ti_denorm)
 
         Td = actions[1]
         self.logger.record("action_space/Right_Thrust", Td)
-
-        # Td_denorm = actions_denorm[1]
-        # self.logger.record("action_space/Right_Thrust_Denorm", Td_denorm)
-
-        # Rewards
-        # self.total_reward = self.primary_reward + self.time_reward + self.goal_reward + self.timeout_reward
-
-        # self.logger.record("rewards/total_reward", self.total_reward)
-
-        # self.logger.record("rewards/primary_reward", self.primary_reward)
-
-        # self.logger.record("rewards/time_reward", self.time_reward)
-
-        # self.logger.record("rewards/goal_reward", self.goal_reward)
-
-        # self.logger.record("rewards/timeout_reward", self.timeout_reward)
-
 
         # Imprimo todo
         self.logger.dump(self.num_timesteps)
@@ -224,23 +195,6 @@ class ControlEnv(gym.Env):
 
         # ---------------------------- RECOMPENSAS -------------------------
 
-        # reward = - abs(new_state[0] - new_state[2])
-
-        # reward = (
-
-        #             (abs(new_state[0] - new_state[2]))
-
-        #             -(self.current_step / self.max_steps) * (abs(new_state[0] - new_state[2]) > (3/self.max_theta))
-
-        #             + 2 * (abs(new_state[0] - new_state[2]) <= (3/self.max_theta)) 
-
-        #         )
-        
-        # if self.previous_shaping is not None:
-
-        #     reward = shaping - self.previous_shaping
-
-        # self.previous_shaping = shaping
         # -------------------------------------------------------------------
         # -------------------------------------------------------------------
 
@@ -303,6 +257,10 @@ class ControlEnv(gym.Env):
         # Devolver el nuevo estado, la recompensa, si el episodio ha terminado y un diccionario vacío de información adicional
         return self.current_state, reward, terminated,truncated, {}
 
+
+    def set_theta_reference(self, new_theta_reference):
+        """Method to set a new value of theta reference from a vec_env"""
+        self.theta_referencia = new_theta_reference
 
 
     def _calculate_reward(self, state):

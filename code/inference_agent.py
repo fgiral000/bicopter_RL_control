@@ -32,9 +32,9 @@ def setup_arduino():
 if __name__ == "__main__":
 
     #Load the environment
-    MODEL_NAME_NEW = "../tqc_model_3targets_nostop"
-    MODEL_BUFFER_NEW = "../replay_buffer_tqc_training_3targets_nostop.pkl"
-    VEC_ENV_NEW = "../vec_normalize_3targets_nostop.pkl"
+    MODEL_NAME_NEW = "../models/model/tqc_model_3targets_nostop"
+    MODEL_BUFFER_NEW = "../models/replay_buffer/replay_buffer_tqc_training_3targets_nostop.pkl"
+    VEC_ENV_NEW = "../models/vec_envs/vec_normalize_3targets_nostop.pkl"
 
     #############################################################################################################################
     #############################################################################################################################
@@ -112,8 +112,8 @@ if __name__ == "__main__":
             # observation = env.normalize_obs(unnorm_observation)
             # print(f"Current angle: {observation[0][-6]}, Error track: {abs(observation[0][-6]-observation[0][-4])}")
             if current_step >= 100:
-                new_theta_value = np.random.choice([-25.0,0.0,25.0])         #possibles angles of reference to give to the agent
-                env.set_attr("theta_referencia", new_theta_value)
+                new_theta_value = np.random.choice([-25.0,0.0,25.0])
+                env.env_method("set_theta_reference", new_theta_value)         #possibles angles of reference to give to the agent
                 print("The new theta reference is:", new_theta_value)
                 current_step = 0
 
