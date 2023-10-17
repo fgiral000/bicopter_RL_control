@@ -6,8 +6,6 @@ from gymnasium.wrappers import TimeLimit
 from wrappers_from_rlzoo import ActionSmoothingWrapper, HistoryWrapper
 import gymnasium as gym
 import stable_baselines3
-#import tensorflow as tf
-import tensorboard
 # import yaml
 from gym_env_balancin_v2 import ControlEnv
 from gym_env_balancin_v2 import TensorboardCallback
