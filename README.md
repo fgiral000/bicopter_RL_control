@@ -47,7 +47,7 @@ To train your RL agent and control the bicopter, follow these steps:
 2. Clone this repository to your local machine:
 
    ```bash
-   git clone https://github.com/your-username/bicopter-rl-control.git
+   git clone https://github.com/fgiral000/bicopter_RL_control.git
    ```
 
 3. Set up your Arduino with the MPU6050 and ESCs as described in the `arduino` directory.
