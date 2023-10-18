@@ -56,7 +56,7 @@ To train your RL agent and control the bicopter, follow these steps:
 
 5. Train the RL agent using the provided training scripts.
 
-6. Use the inference scripts named as `inference_agent.py` or 'inference_agent_hand_control.py' directory to control the bicopter using the trained models.
+6. Use the inference scripts named as `inference_agent.py` or `inference_agent_hand_control.py` directory to control the bicopter using the trained models.
 
 ## Acknowledgments
 
@@ -64,6 +64,6 @@ To train your RL agent and control the bicopter, follow these steps:
 
 - Special thanks to the open-source communities behind the mentioned libraries and frameworks.
 
-Feel free to contribute to this repository or use it for your bicopter control projects. If you have any questions or issues, please open an [issue](https://github.com/your-username/bicopter-rl-control/issues).
+Feel free to contribute to this repository or use it for your bicopter control projects. If you have any questions or issues, please open an [issue](https://github.com/fgiral000/bicopter_RL_control/issues).
 
 Happy flying! 🚁🕹️
