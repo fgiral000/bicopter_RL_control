@@ -19,7 +19,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 # Configure Matplotlib to use LaTeX for text rendering
-matplotlib.rcParams['text.usetex'] = True
+# matplotlib.rcParams['text.usetex'] = True
 
 def setup_arduino():
     """Funcion para hacer el septup del arduino"""
@@ -41,6 +41,15 @@ def hand_tracking_controller(env):
 
     # Capture video from the first camera device
     cap = cv2.VideoCapture(0)
+
+
+    # Initialize the VideoWriter
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # or 'avc1'
+    fps = 30  # or whatever your source's frame rate is
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    out = cv2.VideoWriter('../output.mp4', fourcc, fps, (frame_width, frame_height))
+
 
     def calculate_angle(point1, point2):
         """
@@ -97,12 +106,16 @@ def hand_tracking_controller(env):
         # Display the frame
         cv2.imshow('MediaPipe Hands', frame)
 
+        # Write the frame to the video file
+        out.write(frame)
+
         # Break the loop if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     # Clean up
     cap.release()
+    out.release()
     cv2.destroyAllWindows()
 
 
@@ -114,15 +127,17 @@ def animate(i, x, y1, y2, line1, line2):
 def create_animation(x, y1, y2):
     fig, ax = plt.subplots()
     # Updated legends with LaTeX formatting
-    line1, = ax.plot([], [], 'b-', label=r'Current Angle ($\theta$)')
-    line2, = ax.plot([], [], 'r-', label=r'Reference Angle ($\theta_{\mathrm{ref}}$)')
+    # line1, = ax.plot([], [], 'b-', label=r'Current Angle ($\theta$)')
+    # line2, = ax.plot([], [], 'r-', label=r'Reference Angle ($\theta_{\mathrm{ref}}$)')
+    line1, = ax.plot([], [], 'b-', label=r'Current Theta')
+    line2, = ax.plot([], [], 'r-', label=r'Reference Theta')
 
     ax.set_xlim(min(x), max(x))
     ax.set_ylim(-60, 60)  # Adjust if your data range is different
 
     # Labels for the axes with LaTeX formatting
     ax.set_xlabel(r'Current Time Step')
-    ax.set_ylabel(r'Theta Value in Degrees ($^\circ$)')
+    ax.set_ylabel(r'Theta Value ($^\circ$)')
 
     # Legend for the plot
     ax.legend(loc='upper right')
@@ -223,7 +238,4 @@ if __name__ == "__main__":
             x, y1, y2 = zip(*data_storage)  # Unpack the data
             create_animation(x, y1, y2)
             break
-
-
-
 
