@@ -19,12 +19,12 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 
-######### CODIGO PRUEBA DE ENTRENAMIENTO DE SOFT ACTOR-CRITIC ###########
+######### SOFT ACTOR-CRITIC TRAINING TEST CODE ###########
 
 def setup_arduino():
-    """Funcion para hacer el septup del arduino"""
-    arduino = serial.Serial('/dev/ttyACM0', 9600) # Replace 'COM3' with the arduinoial port of your Arduino
-    print("Correctamente conectado")
+    """Function to set up the arduino"""
+    arduino = serial.Serial('/dev/ttyACM0', 9600) # Replace 'COM3' with the serial port of your Arduino
+    print("Successfully connected")
 
     time.sleep(3)
     arduino.reset_input_buffer()
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     #############################################################################################################################
     ############################# ENVIRONMENT #######################################################################################
 
-    #Names of files of departure
+    #Names of the starting files
     MODEL_NAME_LOAD_FROM = "../tqc_model_3targets"
     MODEL_BUFFER_LOAD_FROM = "../replay_buffer_tqc_training_3targets.pkl"
     VEC_ENV_LOAD_FROM = "../vec_normalize_3targets.pkl"
@@ -60,22 +60,22 @@ if __name__ == "__main__":
     # VEC_ENV_NEW = "../vec_normalize_1targets.pkl"
 
 
-    #Se inicializa el entorno del arduino
+    #Arduino environment is initialized
 
     arduino_port = setup_arduino()
-    logging.info("Enciende la fuente de alimentacion")
-    logging.info("Espera 20 segundos hasta que todo el sistema este activo")
+    logging.info("Turn on the power supply")
+    logging.info("Wait 20 seconds until the entire system is active")
     time.sleep(10)
 
-    logging.info("El sistema se ha activado correctamente")
+    logging.info("The system has been activated correctly")
 
-    input("Presiona la tecla enter cuando todo este preparado",)
-
-
+    input("Press the enter key when everything is ready",)
 
 
 
-    #Se establece el entorno de entrenamiento
+
+
+    #The training environment is established
     env = ControlEnv(arduino_port)
     env = Monitor(env)
     env = TimeLimit(env, max_episode_steps=500)
@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
 
 
-    logging.info("Estableciendo entorno de entrenamiento")
+    logging.info("Setting up training environment")
     time.sleep(2)
     # env.reset()
     # time.sleep(2)
@@ -106,19 +106,19 @@ if __name__ == "__main__":
 
 
 
-    input("Vuelve a presionar enter para que el agente se ejecute",)
+    input("Press enter again to execute the agent",)
 
 
 
     #############################################################################################################################
     #############################################################################################################################
     #############################################################################################################################
-    ############################# AGENTE #######################################################################################
-    # # Se definen las variables a monitorizar en Tensorboard
+    ############################# AGENT #######################################################################################
+    # # Variables to be monitored in Tensorboard are defined
     r_callback = TensorboardCallback()
     parallel_callback = ParallelTrainCallback(gradient_steps=200)
 
-    # #Se empieza con el entrenamiento del agente
+    # #Training of the agent begins
     
 
 
@@ -166,9 +166,11 @@ if __name__ == "__main__":
     sac.save_replay_buffer(MODEL_BUFFER_NEW)
     env.save(VEC_ENV_NEW)
 
-    #Se finaliza todo el setup del arduino
+    #Arduino setup is finalized
     # env.reset()
     arduino_port.close()
+
+
 
 
 
