@@ -6,6 +6,9 @@ An Arduino is used to interact with the hardware (IMU and ESCs), and states and 
 
 Note: This project has been developed on Linux and has been tested in both Linux and Windows environments.
 
+![ezgif com-video-to-gif](https://github.com/fgiral000/bicopter_RL_control/assets/125482075/6c54b92f-ec60-461f-9176-67b520ff8c70)
+
+
 ## Dependencies
 
 Before getting started, make sure you have the following libraries and frameworks installed:
